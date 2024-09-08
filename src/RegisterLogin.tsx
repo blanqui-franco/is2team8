@@ -4,7 +4,7 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 const RegisterLogin: React.FC = () => {
   const [username, setUsername] = useState<string>('');
   const [password, setPassword] = useState<string>('');
-  const [hasAccount, setHasAccount] = useState<boolean>(true); // Estado para alternar entre login y registro
+  const [hasAccount, setHasAccount] = useState<boolean>(true); 
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
