@@ -38,5 +38,34 @@ def register(request):
 @authentication_classes([TokenAuthentication]) #me envia un header con una propieda token, y vamos a validar 
 @permission_classes([IsAuthenticated])
 def profile(request):
-    
     return Response("Logueado con{}".format(request.user.username),status.HTTP_200_OK)
+
+# OBTENER TODOS LOS USUARIOS (READ)
+@api_view(['GET'])
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated])
+def get_all_users(request):
+    users = User.objects.all()
+    serializer = UserSerializer(users, many=True)
+    return Response(serializer.data, status=status.HTTP_200_OK)
+
+# ACTUALIZAR USUARIO (UPDATE)
+@api_view(['PUT'])
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated])
+def update_user(request, pk):
+    user = get_object_or_404(User, pk=pk)
+    serializer = UserSerializer(user, data=request.data, partial=True)
+    if serializer.is_valid():
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+# ELIMINAR USUARIO (DELETE)
+@api_view(['DELETE'])
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated])
+def delete_user(request, pk):
+    user = get_object_or_404(User, pk=pk)
+    user.delete()
+    return Response(status=status.HTTP_204_NO_CONTENT)

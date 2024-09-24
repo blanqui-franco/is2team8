@@ -18,11 +18,20 @@ from django.contrib import admin
 from django.urls import path, re_path
 from . import views
 
-urlpatterns = [
-   path('admin/', admin.site.urls),
-    re_path('login/', views.login),
+#urlpatterns = [
+   #path('admin/', admin.site.urls),
+   # re_path('login/', views.login),
   
-    re_path('register/', views.register),
-  re_path('profile/', views.profile),
+   # re_path('register/', views.register),
+  #re_path('profile/', views.profile),
 
+#]
+urlpatterns = [
+    path('admin/', admin.site.urls),
+    path('login/', views.login, name='login'),
+    path('register/', views.register, name='register'),
+    path('profile/', views.profile, name='profile'),
+    path('get_all_users/', views.get_all_users, name='get_all_users'),
+    path('update_user/<int:pk>/', views.update_user, name='update_user'),
+    path('delete_user/<int:pk>/', views.delete_user, name='delete_user')
 ]
