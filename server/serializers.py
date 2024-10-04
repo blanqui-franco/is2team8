@@ -9,6 +9,13 @@ class UserSerializer(serializers.ModelSerializer):
             'password': {'write_only': True}  # Solo permitir escribir el password
         }
 
+
     def create(self, validated_data):
-        user = User.objects.create_user(**validated_data)
+        # Aquí creamos el usuario asegurándonos de encriptar la contraseña
+        user = User(
+            username=validated_data['username'],
+            email=validated_data['email'],  # Guardamos el correo electrónico
+        )
+        user.set_password(validated_data['password'])  # Encriptamos la contraseña
+        user.save()
         return user

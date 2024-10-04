@@ -1,21 +1,15 @@
-import React, { useState, useEffect, FormEvent, ChangeEvent } from 'react';
+import React, { useState, FormEvent, ChangeEvent } from 'react';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 
 const RegisterLogin: React.FC = () => {
   const [username, setUsername] = useState<string>('');
   const [password, setPassword] = useState<string>('');
-  const [hasAccount, setHasAccount] = useState<boolean>(true);
+  const [email, setEmail] = useState<string>(''); // Solo para el formulario de registro
+  const [hasAccount, setHasAccount] = useState<boolean>(true); // true = Login, false = Registro
   const [error, setError] = useState<string | null>(null);
-  const [users, setUsers] = useState<any[]>([]);  // Para almacenar usuarios
-  const [newUsername, setNewUsername] = useState<string>(''); // Para nuevo usuario en CRUD
-  const [newPassword, setNewPassword] = useState<string>(''); // Para contraseña de nuevo usuario
-
-  useEffect(() => {
-    if (localStorage.getItem('token')) {
-      fetchUsers();  // Llamar a la funcion para obtener usuarios si el usuario ya está autenticado
-    }
-  }, []);
+  const navigate = useNavigate();
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -27,15 +21,17 @@ const RegisterLogin: React.FC = () => {
         });
         localStorage.setItem('token', response.data.token);
         console.log('Iniciar Sesión:', response.data);
-        fetchUsers();  // Llamar a la función para obtener usuarios después de iniciar sesión
+        navigate('/crud'); // Redirigir después del login
       } else {
         const response = await axios.post('http://127.0.0.1:8000/register/', {
           username,
-          password
+          password,
+          email // Asegúrate de enviar el email si es requerido
         });
         localStorage.setItem('token', response.data.token);
-        console.log('Registrarse:', response.data);
-        fetchUsers();
+        console.log('Registro exitoso:', response.data);
+        //navigate('/crud'); // Redirigir después del registro
+        setHasAccount(true);
       }
     } catch (error: any) {
       if (error.response) {
@@ -43,53 +39,6 @@ const RegisterLogin: React.FC = () => {
       } else {
         setError('Error en la conexión con el servidor');
       }
-    }
-  };
-
-  const fetchUsers = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      const response = await axios.get('http://127.0.0.1:8000/get_all_users/', {
-        headers: {
-          Authorization: `Token ${token}`
-        }
-      });
-      setUsers(response.data);
-    } catch (error) {
-      setError('No se pudieron cargar los usuarios.');
-    }
-  };
-
-  const createUser = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      const response = await axios.post('http://127.0.0.1:8000/get_all_users/', {
-        username: newUsername,
-        password: newPassword
-      }, {
-        headers: {
-          Authorization: `Token ${token}`
-        }
-      });
-      setUsers([...users, response.data]); // Actualizar la lista de usuarios con el nuevo
-      setNewUsername('');
-      setNewPassword('');
-    } catch (error) {
-      setError('Error al crear el usuario.');
-    }
-  };
-
-  const deleteUser = async (id: number) => {
-    try {
-      const token = localStorage.getItem('token');
-      await axios.delete(`http://127.0.0.1:8000/users/${id}/`, {
-        headers: {
-          Authorization: `Token ${token}`
-        }
-      });
-      setUsers(users.filter(user => user.id !== id)); // Remover usuario de la lista
-    } catch (error) {
-      setError('Error al eliminar el usuario.');
     }
   };
 
@@ -102,33 +51,59 @@ const RegisterLogin: React.FC = () => {
           </h2>
           <form onSubmit={handleSubmit}>
             {error && <div className="alert alert-danger">{error}</div>}
+
+            {/* Nombre de usuario */}
             <div className="mb-3">
-              <label className="form-label">Nombre de Usuario:</label>
+              <label className="form-label" htmlFor="username">Nombre de Usuario:</label>
               <input
                 type="text"
+                id="username"
                 className="form-control"
                 value={username}
                 onChange={(e: ChangeEvent<HTMLInputElement>) => setUsername(e.target.value)}
                 required
               />
             </div>
+
+            {/* Email solo en el formulario de registro */}
+            {!hasAccount && (
+              <div className="mb-3">
+                <label className="form-label" htmlFor="email">Correo Electrónico:</label>
+                <input
+                  type="email"
+                  id="email"
+                  className="form-control"
+                  value={email}
+                  onChange={(e: ChangeEvent<HTMLInputElement>) => setEmail(e.target.value)}
+                  required
+                />
+              </div>
+            )}
+
+            {/* Contraseña */}
             <div className="mb-3">
-              <label className="form-label">Contraseña:</label>
+              <label className="form-label" htmlFor="password">Contraseña:</label>
               <input
                 type="password"
+                id="password"
                 className="form-control"
                 value={password}
                 onChange={(e: ChangeEvent<HTMLInputElement>) => setPassword(e.target.value)}
                 required
               />
             </div>
+
+            {/* Botón de enviar */}
             <button type="submit" className="btn btn-primary w-100">
               {hasAccount ? 'Iniciar Sesión' : 'Registrarse'}
             </button>
+
+            {/* Alternar entre iniciar sesión y registrarse */}
             <div className="text-center mt-3">
               <span>{hasAccount ? '¿No tienes una cuenta? ' : '¿Ya tienes una cuenta? '}</span>
               <button
                 className="btn btn-link p-0"
+                type="button"
                 onClick={() => setHasAccount(!hasAccount)}
               >
                 {hasAccount ? 'Registrarse aquí' : 'Iniciar Sesión aquí'}
@@ -137,35 +112,6 @@ const RegisterLogin: React.FC = () => {
           </form>
         </div>
       </div>
-
-      {localStorage.getItem('token') && (
-        <div className="mt-5">
-          <h3>Lista de Usuarios</h3>
-          <ul>
-            {users.map(user => (
-              <li key={user.id}>
-                {user.username}
-                <button onClick={() => deleteUser(user.id)} className="btn btn-danger ms-2">Eliminar</button>
-              </li>
-            ))}
-          </ul>
-          
-          <h3>Crear Nuevo Usuario</h3>
-          <input
-            type="text"
-            placeholder="Nuevo nombre de usuario"
-            value={newUsername}
-            onChange={(e) => setNewUsername(e.target.value)}
-          />
-          <input
-            type="password"
-            placeholder="Contraseña"
-            value={newPassword}
-            onChange={(e) => setNewPassword(e.target.value)}
-          />
-          <button onClick={createUser} className="btn btn-success">Crear Usuario</button>
-        </div>
-      )}
     </div>
   );
 };

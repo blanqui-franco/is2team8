@@ -1,12 +1,16 @@
 import React from 'react';
-import './App.css';
+import { BrowserRouter as Router, Route, Routes } from 'react-router-dom'; // Cambia Switch por Routes
+import UserCrud from './UserCrud';
 import RegisterLogin from './RegisterLogin';
 
 const App: React.FC = () => {
   return (
-    <div className="App">
-      <RegisterLogin />
-    </div>
+    <Router>
+      <Routes>
+        <Route path="/" element={<RegisterLogin />} />
+        <Route path="/crud" element={<UserCrud />} />
+      </Routes>
+    </Router>
   );
 };
 

@@ -25,14 +25,19 @@ def login(request):
 def register(request):
     serializer = UserSerializer(data=request.data)
     if serializer.is_valid():
-        serializer.save()
-
-        user = User.objects.get(username=serializer.data['username'])#username que me da el frontend
-        user.set_password(serializer.data['password'])#se establece la contrasenha que viene del frontend, ya incripto
-        user.save() #se crea user en la base de datos
-        token = Token.objects.create(user=user)
-        return Response({'token': token.key,'user':serializer.data},status=status.HTTP_201_CREATED)
+        try:
+            user = serializer.save()
+            user.set_password(serializer.validated_data['password'])
+            user.save()
+            
+            # Intentar crear el token
+            token = Token.objects.create(user=user)
+            return Response({'token': token.key, 'user': serializer.data}, status=status.HTTP_201_CREATED)
+        except Exception as e:
+            return Response({'error': 'Error al crear el token: {}'.format(str(e))}, status=status.HTTP_400_BAD_REQUEST)
+    
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 
 @api_view(['POST'])
 @authentication_classes([TokenAuthentication]) #me envia un header con una propieda token, y vamos a validar 
