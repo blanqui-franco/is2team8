@@ -11,6 +11,7 @@ const RegisterLogin: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
 
+  // Función para manejar el envío del formulario
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     try {
@@ -21,17 +22,19 @@ const RegisterLogin: React.FC = () => {
         });
         localStorage.setItem('token', response.data.token);
         console.log('Iniciar Sesión:', response.data);
-        navigate('/crud'); // Redirigir después del login
+        //navigate('/crud'); // Redirigir después del login
+        navigate('/workspace');
       } else {
         const response = await axios.post('http://127.0.0.1:8000/register/', {
           username,
           password,
-          email // Asegúrate de enviar el email si es requerido
+          email
         });
         localStorage.setItem('token', response.data.token);
         console.log('Registro exitoso:', response.data);
         //navigate('/crud'); // Redirigir después del registro
         setHasAccount(true);
+        setError(null); 
       }
     } catch (error: any) {
       if (error.response) {
@@ -115,5 +118,7 @@ const RegisterLogin: React.FC = () => {
     </div>
   );
 };
+
+
 
 export default RegisterLogin;
