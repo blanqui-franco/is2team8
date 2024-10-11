@@ -1,6 +1,6 @@
 // MainLayout.tsx
 import React from 'react';
-import Sidebar from './Sidebar';  // La barra lateral
+import Sidebar from './sidebar';  // La barra lateral
 import WorkspaceBoard from './WorkspaceBoard';  // Tableros
 
 const MainLayout: React.FC = () => {

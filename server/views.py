@@ -8,6 +8,8 @@ from django.shortcuts import get_object_or_404
 from rest_framework.decorators import authentication_classes, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.authentication import TokenAuthentication
+from google.auth.transport import requests
+from google.oauth2 import id_token
 
 @api_view(['POST'])
 def login(request):
@@ -44,6 +46,20 @@ def register(request):
 @permission_classes([IsAuthenticated])
 def profile(request):
     return Response("Logueado con{}".format(request.user.username),status.HTTP_200_OK)
+
+@api_view(['POST'])
+def google_login(request):
+    token = request.data.get('token')
+    try:
+        TU_CLIENT_ID_DE_GOOGLE = "218317893072-3pi6u95fe3pbd2gnrujued06rd30vf4e.apps.googleusercontent.com"
+        id_info = id_token.verify_oauth2_token(token, requests.Request(), TU_CLIENT_ID_DE_GOOGLE)
+        email = id_info['email']
+        # Lógica para registrar o autenticar al usuario basado en el email de Google
+        user, created = User.objects.get_or_create(email=email)
+        token = Token.objects.create(user=user)
+        return Response({'token': token.key}, status=status.HTTP_200_OK)
+    except ValueError:
+        return Response({'error': 'Invalid Token'}, status=status.HTTP_400_BAD_REQUEST)
 
 # OBTENER TODOS LOS USUARIOS (READ)
 @api_view(['GET'])
