@@ -40,7 +40,8 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework.authtoken',
      'corsheaders',
-    'coreapi'
+    'coreapi',
+    'workspace',
     
 ]
 
@@ -81,8 +82,12 @@ WSGI_APPLICATION = 'server.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'is2team8',  # Nombre de la base de datos
+        'USER': 'postgres',     # Usuario de la base de datos
+        'PASSWORD': '12345',  # Contraseña del usuario
+        'HOST': 'localhost',
+        'PORT': '5433',
     }
 }
 
@@ -133,4 +138,14 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 CORS_ALLOW_ALL_ORIGINS = True
 REST_FRAMEWORK = {
     "DEFAULT_SCHEMA_CLASS": "rest_framework.schemas.coreapi.AutoSchema",
+
+     # Clases de autenticación predeterminadas
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.TokenAuthentication',
+    ],
+    
+    # Clase de permisos predeterminada
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticated',
+    ],
 }
