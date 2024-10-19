@@ -1,5 +1,5 @@
-// Sidebar.tsx
 import React from 'react';
+import { Link } from 'react-router-dom';
 
 const Sidebar: React.FC = () => {
   return (
@@ -7,13 +7,13 @@ const Sidebar: React.FC = () => {
       <h2>Tableros</h2>
       <ul className="nav flex-column">
         <li className="nav-item">
-          <a className="nav-link text-light" href="#">Tableros</a>
+          <Link to="/boards" className="nav-link text-light">Tableros</Link>
         </li>
         <li className="nav-item">
-          <a className="nav-link text-light" href="#">Miembros</a>
+          <Link to="/members" className="nav-link text-light">Miembros</Link>
         </li>
         <li className="nav-item">
-          <a className="nav-link text-light" href="#">Ajustes</a>
+          <Link to="/settings" className="nav-link text-light">Ajustes</Link>
         </li>
       </ul>
     </div>

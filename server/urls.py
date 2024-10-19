@@ -1,42 +1,19 @@
-"""
-URL configuration for server project.
 
-The `urlpatterns` list routes URLs to views. For more information please see:
-    https://docs.djangoproject.com/en/5.1/topics/http/urls/
-Examples:
-Function views
-    1. Add an import:  from my_app import views
-    2. Add a URL to urlpatterns:  path('', views.home, name='home')
-Class-based views
-    1. Add an import:  from other_app.views import Home
-    2. Add a URL to urlpatterns:  path('', Home.as_view(), name='home')
-Including another URLconf
-    1. Import the include() function: from django.urls import include, path
-    2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
-"""
 from django.contrib import admin
-from django.urls import path, re_path,include
+from django.urls import path, include
 from . import views
-
-#urlpatterns = [
-   #path('admin/', admin.site.urls),
-   # re_path('login/', views.login),
-  
-   # re_path('register/', views.register),
-  #re_path('profile/', views.profile),
-
-#]
-
-
+from rest_framework.authtoken.views import obtain_auth_token
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('login/', views.login, name='login'),
+    path('login/', obtain_auth_token, name='login'),
     path('register/', views.register, name='register'),
     path('profile/', views.profile, name='profile'),
     path('get_all_users/', views.get_all_users, name='get_all_users'),
     path('update_user/<int:pk>/', views.update_user, name='update_user'),
     path('delete_user/<int:pk>/', views.delete_user, name='delete_user'),
-    path('workspaces/', include('workspace.urls'))
+    
+    # Incluir las rutas de workspace en otro archivo
+    path('workspaces/', include('server.ws_urls')),
 
 ]

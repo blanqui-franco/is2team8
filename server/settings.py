@@ -39,9 +39,10 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'rest_framework.authtoken',
-     'corsheaders',
+    'corsheaders',
     'coreapi',
-    'workspace',
+    'server',
+    #'workspace',
     
 ]
 
@@ -79,15 +80,10 @@ WSGI_APPLICATION = 'server.wsgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
-
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'is2team8',  # Nombre de la base de datos
-        'USER': 'postgres',     # Usuario de la base de datos
-        'PASSWORD': '12345',  # Contraseña del usuario
-        'HOST': 'localhost',
-        'PORT': '5433',
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
     }
 }
 
