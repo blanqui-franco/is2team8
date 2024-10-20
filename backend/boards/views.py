@@ -102,7 +102,7 @@ class BoardDetail(generics.RetrieveUpdateDestroyAPIView):
                                     Q(owner_id__in=project_ids, owner_model=ContentType.objects.get(model='project')))
 
     def get_object(self):
-        #board_id = self.kwargs.get('pk')
+        board_id = self.kwargs.get('pk')
         #redis_key = f'{self.request.user.username}:RecentlyViewedBoards'
         #cur_time_int = int(timezone.now().strftime("%Y%m%d%H%M%S"))
         #r.zadd(redis_key, {board_id: cur_time_int})

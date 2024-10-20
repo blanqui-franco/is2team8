@@ -94,7 +94,7 @@ const Card = ({ card, list, provided, isDragging }) => {
                         ></div>
                     ) : (
                         <div className="card__image">
-                            <img src={cardImage} />
+                            <img src={cardImage} alt='imagen card'/>
                         </div>
                     ))}
                 <div>
