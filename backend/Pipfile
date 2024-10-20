@@ -1,0 +1,23 @@
+[[source]]
+name = "pypi"
+url = "https://pypi.org/simple"
+verify_ssl = true
+
+[dev-packages]
+
+[packages]
+djangorestframework-simplejwt = "*"
+pillow = "*"
+pytest = "*"
+pytest-django = "*"
+pytest-cov = "*"
+mixer = "*"
+drf-yasg = "*"
+uritemplate = "*"
+django-cors-headers = "*"
+djangorestframework = "*"
+pyyaml = "*"
+redis = "*"
+
+[requires]
+python_version = "3.8"
