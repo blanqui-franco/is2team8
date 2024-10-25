@@ -14,7 +14,7 @@ const Landing = () => {
                     YvyPlan te permite trabajar de forma más colaborativa y hacer más cosas
                 </h1>
                 <h4 className="landing-banner__subtitle">
-                    Los tableros, listas y tarjetas de Trello le permiten organizar y
+                    Los tableros, listas y tarjetas de YvyPlan le permiten organizar y
                     priorice sus proyectos de una manera divertida y flexible.
                 </h4>
                 <Link to="/register" className="btn">

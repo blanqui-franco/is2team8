@@ -35,19 +35,32 @@ const List = ({ list, index }) => {
     const [cardTitle, setCardTitle] = useState("");
     const [editingTitle, setEditingTitle] = useState(false);
 
+    // Lógica WIP
+    const totalCards = list.items.length;
+    const isOverWIP = totalCards >= list.maxWIP; // Verifica si se excede el WIP
+
     useBlurSetState(".list__add-card-form", addingCard, setAddingCard);
     useBlurSetState(".list__title-edit", editingTitle, setEditingTitle);
 
     const onAddCard = async (e) => {
         e.preventDefault();
         if (cardTitle.trim() === "") return;
-        const { data } = await authAxios.post(`${backendUrl}/boards/items/`, {
-            list: list.id,
-            title: cardTitle,
-        });
-        setAddingCard(false);
-        addCard(board, setBoard)(list.id, data);
+    
+        try {
+            const { data } = await authAxios.post(`${backendUrl}/boards/items/`, {
+                list: list.id,
+                title: cardTitle,
+            });
+            setAddingCard(false);
+            addCard(board, setBoard)(list.id, data);
+        } catch (error) {
+            if (error.response && error.response.status === 400) {
+                // Mostrar una alerta o un mensaje en el frontend
+                alert("No se puede agregar más tarjetas: Límite de WIP alcanzado");
+            }
+        }
     };
+    
 
     const listCards = useRef(null);
     useEffect(() => {
@@ -106,6 +119,14 @@ const List = ({ list, index }) => {
                             )}
                             <i className="far fa-ellipsis-h"></i>
                         </div>
+
+                        {/* Mostramos una alerta visual si se excede el WIP */}
+                        {isOverWIP && (
+                            <div className="list__wip-alert">
+                                <p>¡Has excedido el límite de tareas permitidas (WIP)!</p>
+                            </div>
+                        )}
+
                         <Droppable droppableId={list.id.toString()} type="item">
                             {(provided) => (
                                 <div
@@ -135,26 +156,29 @@ const List = ({ list, index }) => {
                                 </div>
                             )}
                         </Droppable>
+
+                        {/* Deshabilitar botón si se excede el WIP */}
                         {!addingCard ? (
                             <button
                                 className="list__add-card"
                                 onClick={() => setAddingCard(true)}
+                                disabled={isOverWIP} // Deshabilitar si se excede el WIP
                             >
-                                Add card
+                                {isOverWIP ? "Límite de WIP Excedido" : "Agregar Tarjeta"}
                             </button>
                         ) : cardTitle.trim() !== "" ? (
                             <button
                                 className="list__add-card list__add-card--active btn"
                                 onClick={onAddCard}
                             >
-                                Add
+                                Agregar
                             </button>
                         ) : (
                             <button
                                 className="list__add-card list__add-card--active btn btn--disabled"
                                 disabled
                             >
-                                Add
+                                Agregar
                             </button>
                         )}
                     </div>

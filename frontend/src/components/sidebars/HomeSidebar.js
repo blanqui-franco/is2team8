@@ -24,7 +24,7 @@ const HomeSidebar = ({ setShowTeamModal, projects }) => {
             </ul>
 
             <div className="home-menu__section">
-                <p className="home-menu__title">Projects</p>
+                <p className="home-menu__title">Espacios de trabajo</p>
                 <a className="btn btn--transparent btn--small">
                     <button onClick={() => setShowTeamModal(true)}>
                         <i className="fal fa-plus"></i>

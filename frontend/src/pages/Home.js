@@ -34,12 +34,12 @@ const Home = () => {
                     projects={projects || []}
                 />
                 <div className="home">
+                    {/* Sección de Tableros Estrella */}
                     {starredBoards.length !== 0 && (
                         <>
                             <div className="home__section">
                                 <p className="home__title">
-                                    <i className="fal fa-star"></i> Starred
-                                    Boards
+                                    <i className="fal fa-star"></i> Starred Boards
                                 </p>
                             </div>
                             <div className="home__boards">
@@ -54,13 +54,13 @@ const Home = () => {
                         </>
                     )}
 
+                    {/* Sección de Tableros Recientemente Vistos */}
                     {(recentlyViewedBoards || []).length !== 0 &&
                         starredBoards.length === 0 && (
                             <>
                                 <div className="home__section">
                                     <p className="home__title">
-                                        <i className="fal fa-clock"></i>{" "}
-                                        Recently Viewed
+                                        <i className="fal fa-clock"></i> Visto recientemente
                                     </p>
                                 </div>
                                 <div className="home__boards">
@@ -75,9 +75,10 @@ const Home = () => {
                             </>
                         )}
 
+                    {/* Sección de Tableros Personales */}
                     <div className="home__section">
                         <p className="home__title">
-                            <i className="fal fa-user"></i> Personal Boards
+                        <i className="fal fa-users"></i> Prueba YvyPlan
                         </p>
                         <button
                             className="btn"
@@ -99,54 +100,64 @@ const Home = () => {
                         ))}
                     </div>
 
-                    {projectBoards.map((project) => (
-                        <React.Fragment key={uuidv4()}>
+                    {/* Nueva Sección: Proyectos y Tableros por Proyecto */}
+                    {projects && projects.length > 0 && (
+                        <>
                             <div className="home__section">
                                 <p className="home__title">
-                                    <i className="fal fa-users"></i>{" "}
-                                    {project.title}
+                                    <i className="fal fa-users"></i> Espacios de Trabajo
                                 </p>
-                                <div>
-                                    <Link
-                                        className="btn btn--secondary"
-                                        to={`/p/${project.id}`}
-                                    >
-                                        <i className="fab fa-yvyplan"></i> Boards
-                                    </Link>
-                                    <Link
-                                        className="btn btn--secondary"
-                                        to={`/p/${project.id}?tab=2`}
-                                    >
-                                        <i className="fal fa-user"></i> Members
-                                    </Link>
-                                    <Link
-                                        className="btn btn--secondary"
-                                        to={`/p/${project.id}?tab=3`}
-                                    >
-                                        <i className="fal fa-cogs"></i> Settings
-                                    </Link>
-                                    <a
-                                        className="btn"
-                                        onClick={() => {
-                                            setBoardProject(project.id);
-                                            setShowAddBoardModal(true);
-                                        }}
-                                    >
-                                        <i className="fal fa-plus"></i> Create
-                                    </a>
-                                </div>
                             </div>
-                            <div className="home__boards">
-                                {project.boards.map((board) => (
-                                    <HomeBoard
-                                        board={board}
-                                        replaceBoard={replaceBoard}
-                                        key={uuidv4()}
-                                    />
-                                ))}
-                            </div>
-                        </React.Fragment>
-                    ))}
+                            {projects.map((project) => (
+                                <React.Fragment key={uuidv4()}>
+                                    <div className="home__section">
+                                        <p className="home__title">
+                                            {project.title}
+                                        </p>
+                                        <div>
+                                            <Link
+                                                className="btn btn--secondary"
+                                                to={`/p/${project.id}`}
+                                            >
+                                                <i className="fab fa-yvyplan"></i> Tableros
+                                            </Link>
+                                            <Link
+                                                className="btn btn--secondary"
+                                                to={`/p/${project.id}?tab=2`}
+                                            >
+                                                <i className="fal fa-user"></i> Miembros
+                                            </Link>
+                                            <Link
+                                                className="btn btn--secondary"
+                                                to={`/p/${project.id}?tab=3`}
+                                            >
+                                                <i className="fal fa-cogs"></i> Settings
+                                            </Link>
+                                            <button
+                                                className="btn"
+                                                onClick={() => {
+                                                    setBoardProject(project.id);
+                                                    setShowAddBoardModal(true);
+                                                }}
+                                            >
+                                                <i className="fal fa-plus"></i> Create Board
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div className="home__boards">
+                                        {project.boards &&
+                                            project.boards.map((board) => (
+                                                <HomeBoard
+                                                    board={board}
+                                                    replaceBoard={replaceBoard}
+                                                    key={uuidv4()}
+                                                />
+                                            ))}
+                                    </div>
+                                </React.Fragment>
+                            ))}
+                        </>
+                    )}
                 </div>
             </div>
             {showTeamModal && (

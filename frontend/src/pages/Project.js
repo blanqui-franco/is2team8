@@ -37,7 +37,7 @@ const Project = (props) => {
     const { data: boards, addItem: addBoard } = useAxiosGet(
         "/boards?project=" + id
     );
-    useDocumentTitle(project ? `${project.title} | Trello` : "");
+    useDocumentTitle(project ? `${project.title} | YvyPlan` : "");
 
     if (!project && loading) return null;
     if (!project && !loading) return <Error404 />; // No project with given id

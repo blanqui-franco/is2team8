@@ -2522,3 +2522,13 @@ button, input, select, textarea, input::placeholder {
   margin-bottom: 2em;
 }
 /*# sourceMappingURL=index.css.map */
+
+.list__wip-alert {
+  background-color: #f8d7da; /* Color rojo claro de advertencia */
+  color: #721c24; /* Texto rojo oscuro */
+  padding: 8px;
+  border-radius: 4px;
+  text-align: center;
+  margin: 8px 0;
+  font-weight: bold;
+}

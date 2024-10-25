@@ -36,6 +36,9 @@ class List(models.Model):
     title = models.CharField(max_length=255, blank=False, null=False)
     order = models.DecimalField(max_digits=30, decimal_places=15 , blank=True, null=True)
     created_at = models.DateTimeField(default=timezone.now)
+    
+    # Nuevo campo para el límite de WIP
+    max_wip = models.IntegerField(default=5, null=False, blank=False)  
 
     def __str__(self):
         return self.title
@@ -81,6 +84,10 @@ class Item(models.Model):
         return self.title
 
     def save(self, *args, **kwargs):
+        # Verificar el límite de WIP antes de guardar el ítem
+        if self.list.items.count() >= self.list.max_wip:
+            raise ValueError(f"Cannot add more items. WIP limit of {self.list.max_wip} reached.")
+        
         filtered_objects = Item.objects.filter(list=self.list)
         if not self.order and filtered_objects.count() == 0:
             self.order = 2 ** 16 - 1 
