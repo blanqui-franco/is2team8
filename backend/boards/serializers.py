@@ -8,6 +8,8 @@ from rest_framework import serializers
 from rest_framework.fields import Field
 from users.models import User
 from users.serializers import UserSerializer
+from .models import Subtask
+
 
 from .models import Attachment, Board, Comment, Item, Label, List, Notification
 
@@ -147,3 +149,9 @@ class NotificationSerializer(serializers.ModelSerializer):
         serializer_module_path = f'{object_app}.serializers.{object_name}Serializer'
         serializer_class = import_string(serializer_module_path)
         return serializer_class(obj.action_object).data
+
+
+class SubtaskSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Subtask
+        fields = ['id', 'title', 'completed', 'card', 'due_date']

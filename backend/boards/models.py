@@ -6,7 +6,8 @@ from django.utils import timezone
 #from users.models import User
 from django.conf import settings
 from django.contrib.auth.models import User
-
+from projects.models import Project
+from django.db import models
 
 class Board(models.Model):
     owner_model = models.ForeignKey(ContentType, blank=False, null=False,
@@ -15,7 +16,7 @@ class Board(models.Model):
                                     limit_choices_to=models.Q(app_label='users', model='user') | models.Q(app_label='projects', model='project'))
     owner_id = models.PositiveIntegerField(null=False, blank=False)
     owner = GenericForeignKey('owner_model', 'owner_id')
-
+    project = models.ForeignKey('projects.Project', on_delete=models.CASCADE,null=False)
     title = models.CharField(max_length=255, blank=False, null=False)
     description = models.TextField(blank=True, null=False)
 
@@ -173,3 +174,27 @@ class RecentlyViewedBoard(models.Model):
 
     def __str__(self):
         return f'{self.user.username} viewed {self.board.title}'
+
+
+class Card(models.Model):
+    title = models.CharField(max_length=255)
+    description = models.TextField(blank=True)
+    due_date = models.DateField(null=True, blank=True)
+    assigned_user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)
+    label = models.CharField(max_length=100, blank=True)
+    state = models.ForeignKey('List', on_delete=models.CASCADE)
+    board = models.ForeignKey('Board', on_delete=models.CASCADE)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    def is_overdue(self):
+        if self.due_date and timezone.now().date() > self.due_date:
+            return True
+        return False
+
+
+class Subtask(models.Model):
+    card = models.ForeignKey(Card, related_name="subtasks", on_delete=models.CASCADE)
+    title = models.CharField(max_length=100)
+    due_date = models.DateTimeField(null=True, blank=True)
+    status = models.CharField(max_length=10, choices=[('open', 'Open'), ('closed', 'Closed')], default='open')
