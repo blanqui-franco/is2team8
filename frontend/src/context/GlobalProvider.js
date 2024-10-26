@@ -42,9 +42,17 @@ const GlobalProvider = (props) => {
     };
 
     const logout = () => {
+        // Eliminar los tokens de localStorage
+        localStorage.removeItem("accessToken");
+        localStorage.removeItem("refreshToken");
+    
+        // Actualizar el estado global para reflejar que el usuario está deslogueado
         dispatch({ type: LOGOUT });
+    
+        // Redireccionar al usuario a la página de inicio de sesión
         history.push("/login");
     };
+    
 
     const setBoardContext = (board, setBoard) => {
         dispatch({ type: SET_BOARD_CONTEXT, board, setBoard });
