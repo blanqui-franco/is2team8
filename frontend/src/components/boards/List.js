@@ -9,23 +9,21 @@ import { backendUrl } from "../../static/js/const";
 import { updateList, addCard } from "../../static/js/board";
 import globalContext from "../../context/globalContext";
 
-const getListStyle = (isDragging, defaultStyle) => {
-    if (!isDragging) return defaultStyle;
+// Función para obtener el estilo de la lista
+const getListStyle = (isDragging, defaultStyle, isOverWIP) => {
     return {
         ...defaultStyle,
-        transform: defaultStyle.transform + " rotate(5deg)",
+        backgroundColor: isOverWIP ? "#ffcccc" : defaultStyle.backgroundColor, // Cambiar color si se excede el WIP
+        transform: isDragging ? defaultStyle.transform + " rotate(5deg)" : defaultStyle.transform,
+        transition: "background-color 0.3s ease", // Transición para el cambio de color
     };
 };
 
+// Función para obtener el estilo del título de la lista
 const getListTitleStyle = (isDragging, defaultStyle) => {
-    if (!isDragging)
-        return {
-            ...defaultStyle,
-            cursor: "pointer",
-        };
     return {
         ...defaultStyle,
-        cursor: "grabbing",
+        cursor: isDragging ? "grabbing" : "pointer",
     };
 };
 
@@ -45,27 +43,31 @@ const List = ({ list, index }) => {
     const onAddCard = async (e) => {
         e.preventDefault();
         if (cardTitle.trim() === "") return;
-    
+
+        // Verifica si el límite de WIP ya se ha alcanzado
+        if (isOverWIP) {
+            alert("ALERTA WIP (work in progress): Límite de tareas alcanzado en esta lista.");
+            return; // Sale sin enviar la solicitud al backend
+        }
+
+        // Si no se ha alcanzado el WIP, intenta agregar la tarjeta
         try {
             const { data } = await authAxios.post(`${backendUrl}/boards/items/`, {
                 list: list.id,
                 title: cardTitle,
             });
             setAddingCard(false);
+            setCardTitle(""); // Limpiar el título de la tarjeta
             addCard(board, setBoard)(list.id, data);
         } catch (error) {
-            if (error.response && error.response.status === 400) {
-                // Mostrar una alerta o un mensaje en el frontend
-                alert("No se puede agregar más tarjetas: Límite de WIP alcanzado");
-            }
+            console.error("Error al agregar la tarjeta:", error);
+            alert("Hubo un problema al agregar la tarjeta.");
         }
     };
-    
 
     const listCards = useRef(null);
     useEffect(() => {
-        if (addingCard)
-            listCards.current.scrollTop = listCards.current.scrollHeight;
+        if (addingCard) listCards.current.scrollTop = listCards.current.scrollHeight;
     }, [addingCard]);
 
     useEffect(() => {
@@ -79,16 +81,6 @@ const List = ({ list, index }) => {
     return (
         <Draggable draggableId={"list" + list.id.toString()} index={index}>
             {(provided, snapshot) => {
-                if (
-                    typeof provided.draggableProps.onTransitionEnd ===
-                    "function"
-                ) {
-                    const anim = window?.requestAnimationFrame(() =>
-                        provided.draggableProps.onTransitionEnd({
-                            propertyName: "transform",
-                        })
-                    );
-                }
                 return (
                     <div
                         className="list"
@@ -96,7 +88,8 @@ const List = ({ list, index }) => {
                         {...provided.draggableProps}
                         style={getListStyle(
                             snapshot.isDragging,
-                            provided.draggableProps.style
+                            provided.draggableProps.style,
+                            isOverWIP
                         )}
                     >
                         <div
