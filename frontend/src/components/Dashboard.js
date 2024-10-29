@@ -1,4 +1,3 @@
-// src/components/Dashboard.js
 import React, { useEffect, useState } from 'react';
 import { Bar, Pie } from 'react-chartjs-2';
 import { Chart as ChartJS, ArcElement, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend } from 'chart.js';
@@ -13,6 +12,7 @@ const Dashboard = ({ tasks }) => {
         overdue: 0,
     });
     const [userData, setUserData] = useState({});
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         const data = { todo: 0, inProgress: 0, done: 0, overdue: 0 };
@@ -24,8 +24,8 @@ const Dashboard = ({ tasks }) => {
             if (task.status === "In Progress") data.inProgress += 1;
             if (task.status === "Done") data.done += 1;
 
-            // Contar tareas atrasadas
-            if (new Date(task.dueDate) < new Date() && task.status !== "Done") {
+            // Contar tareas atrasadas (solo si dueDate es válida)
+            if (task.dueDate && new Date(task.dueDate) < new Date() && task.status !== "Done") {
                 data.overdue += 1;
             }
 
@@ -38,6 +38,7 @@ const Dashboard = ({ tasks }) => {
 
         setTaskData(data);
         setUserData(userTaskCount);
+        setLoading(false);  // Finaliza el estado de carga
     }, [tasks]);
 
     const statusData = {
@@ -62,17 +63,39 @@ const Dashboard = ({ tasks }) => {
         ],
     };
 
+    const options = {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            title: {
+                display: true,
+                text: "Tasks by Status",
+            },
+            tooltip: {
+                enabled: true,
+            },
+            legend: {
+                display: true,
+                position: "top",
+            },
+        },
+    };
+
+    if (loading) return <p>Cargando datos...</p>;
+
     return (
         <div>
             <h2>Dashboard de Estadísticas</h2>
-            <div style={{ width: "50%", margin: "20px auto" }}>
-                <Bar data={statusData} options={{ plugins: { title: { display: true, text: "Task Distribution by Status" } } }} />
-            </div>
-            <div style={{ width: "50%", margin: "20px auto" }}>
-                <Pie data={statusData} options={{ plugins: { title: { display: true, text: "Task Distribution by Status (Pie)" } } }} />
-            </div>
-            <div style={{ width: "50%", margin: "20px auto" }}>
-                <Bar data={userTaskData} options={{ plugins: { title: { display: true, text: "Tasks per User" } } }} />
+            <div style={{ display: "flex", justifyContent: "space-around", flexWrap: "wrap" }}>
+                <div style={{ width: "45%", margin: "20px 0" }}>
+                    <Bar data={statusData} options={options} />
+                </div>
+                <div style={{ width: "45%", margin: "20px 0" }}>
+                    <Pie data={statusData} options={options} />
+                </div>
+                <div style={{ width: "45%", margin: "20px 0" }}>
+                    <Bar data={userTaskData} options={options} />
+                </div>
             </div>
         </div>
     );

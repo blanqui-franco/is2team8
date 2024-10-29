@@ -16,20 +16,16 @@ const EditCardModal = ({ card, list, setShowModal }) => {
     const [dueDate, setDueDate] = useState(card.dueDate || null); 
     const [showDatePicker, setShowDatePicker] = useState(false); 
     const [isOverdue, setIsOverdue] = useState(false); 
+    const { board, setBoard } = useContext(globalContext);
     const [tasks, setTasks] = useState(card.tasks || []); // State for tasks
     const [newTaskDescription, setNewTaskDescription] = useState("");
     const [newTaskDueDate, setNewTaskDueDate] = useState("");
     const [showTaskForm, setShowTaskForm] = useState(false);
-
-    const { board, setBoard } = useContext(globalContext);
+   
 
     useEffect(modalBlurHandler(setShowModal), []);
     useBlurSetState(".edit-modal__title-edit", editingTitle, setEditingTitle);
-    useBlurSetState(
-        ".edit-modal__form",
-        editingDescription,
-        setEditingDescription
-    );
+    useBlurSetState(".edit-modal__form",editingDescription,setEditingDescription);
     
     const {
         data: comments,
@@ -61,30 +57,54 @@ const EditCardModal = ({ card, list, setShowModal }) => {
     };
 
     // Task management functions
-    const addTask = (e) => {
+    const saveTasks = async (updatedTasks) => {
+        try {
+            const { data } = await authAxios.put(
+                `${backendUrl}/boards/items/${card.id}/`, // Asegúrate de que esta URL es la correcta
+                { tasks: updatedTasks } // Envía las tareas actualizadas al backend
+            );
+            updateCard(board, setBoard)(list.id, data); // Actualiza el estado del board con las tareas nuevas
+        } catch (error) {
+            console.error("Error al guardar las tareas:", error);
+        }
+    };
+
+    const addTask = async (e) => {
         e.preventDefault();
         if (!newTaskDescription.trim()) return;
 
         const newTask = {
-            id: uuidv4(), // Generate a unique ID for the task
+            id: uuidv4(), // Genera un ID único para la tarea
             description: newTaskDescription,
             status: 'open',
             dueDate: newTaskDueDate,
         };
-        setTasks([...tasks, newTask]);
+
+        // Actualiza el estado de las tareas
+        const updatedTasks = [...tasks, newTask];
+        setTasks(updatedTasks);
+
+        // Guarda las tareas en el backend
+        await saveTasks(updatedTasks);
+
+        // Limpia los campos de entrada
         setNewTaskDescription("");
         setNewTaskDueDate("");
         setShowTaskForm(false);
     };
 
     const removeTask = (taskId) => {
-        setTasks(tasks.filter(task => task.id !== taskId));
+        const updatedTasks = tasks.filter(task => task.id !== taskId);
+        setTasks(updatedTasks);
+        saveTasks(updatedTasks); // Guarda los cambios en el backend
     };
 
     const toggleTaskStatus = (taskId) => {
-        setTasks(tasks.map(task =>
+        const updatedTasks = tasks.map(task =>
             task.id === taskId ? { ...task, status: task.status === 'open' ? 'closed' : 'open' } : task
-        ));
+        );
+        setTasks(updatedTasks);
+        saveTasks(updatedTasks); // Guarda los cambios en el backend
     };
 
     const checkTaskDueDate = (dueDate) => {
@@ -124,7 +144,7 @@ const EditCardModal = ({ card, list, setShowModal }) => {
 
                     <div className="edit-modal__section-header">
                         <div>
-                            <i className="fal fa-file-alt"></i> Description
+                            <i className="fal fa-file-alt"></i> Descripción
                         </div>
                         {card.description !== "" && (
                             <div>
@@ -132,7 +152,7 @@ const EditCardModal = ({ card, list, setShowModal }) => {
                                     className="btn btn--secondary btn--small"
                                     onClick={() => setEditingDescription(true)}
                                 >
-                                    <i className="fal fa-pencil"></i> Edit
+                                    <i className="fal fa-pencil"></i> Editar
                                 </button>
                             </div>
                         )}
@@ -156,8 +176,9 @@ const EditCardModal = ({ card, list, setShowModal }) => {
                                 className="btn btn--secondary btn--small btn--description"
                                 onClick={() => setEditingDescription(true)}
                             >
-                                Add description
+                                Escribe una descripción
                             </button>
+                            
                         )
                     )}
 
@@ -197,7 +218,7 @@ const EditCardModal = ({ card, list, setShowModal }) => {
                                 onChange={(e) => setNewTaskDueDate(e.target.value)}
                             />
                             <button type="submit">Add Task</button>
-                            <button type="button" onClick={() => setShowTaskForm(false)}>Cancel</button>
+                            <button type="button" onClick={() => setShowTaskForm(false)}>Cancelar</button>
                         </form>
                     )}
 
@@ -207,7 +228,6 @@ const EditCardModal = ({ card, list, setShowModal }) => {
                         </div>
                         <div>
                             <a className="btn btn--secondary btn--small">
-                                <i className="fal fa-plus"></i> Add
                             </a>
                         </div>
                     </div>
@@ -236,49 +256,50 @@ const EditCardModal = ({ card, list, setShowModal }) => {
                     </div>
 
                     <ul className="edit-modal__actions">
-                        <li>
-                            <button className="btn btn--secondary btn--small" onClick={saveDueDate}>
-                                <i className="fal fa-save"></i> Save Due Date
-                            </button>
-                        </li>
-                        <li>
-                            <a className="btn btn--secondary btn--small">
-                                <i className="fal fa-tags"></i> Edit Labels
-                            </a>
-                        </li>
-                        <li>
-                            <a className="btn btn--secondary btn--small">
-                                <i className="fal fa-user"></i> Change Members
-                            </a>
-                        </li>
-                        <li>
-                            <a className="btn btn--secondary btn--small">
-                                <i className="fal fa-arrow-right"></i> Move
-                            </a>
-                        </li>
-                        <li style={{ position: "relative" }}>
-                            <button
-                                className="btn btn--secondary btn--small"
-                                onClick={() => setShowDatePicker((prev) => !prev)}
-                            >
-                                <i className="fal fa-calendar-alt"></i> Due Date
-                            </button>
-                            {showDatePicker && (
-                                <div className="date-picker">
-                                    <input
-                                        type="date"
-                                        value={dueDate ? new Date(dueDate).toISOString().substr(0, 10) : ""}
-                                        onChange={(e) => setDueDate(e.target.value)}
-                                    />
-                                </div>
-                            )}
-                        </li>
-                    </ul>
+                            <li>
+                                <button className="btn btn--secondary btn--small" onClick={saveDueDate}>
+                                    <i className="fal fa-save"></i> Save Due Date
+                                </button>
+                            </li>
+                            <li>
+                                <a className="btn btn--secondary btn--small">
+                                    <i className="fal fa-tags"></i> Edit Labels
+                                </a>
+                            </li>
+                            <li>
+                                <a className="btn btn--secondary btn--small">
+                                    <i className="fal fa-user"></i> Change Members
+                                </a>
+                            </li>
+                            <li>
+                                <a className="btn btn--secondary btn--small">
+                                    <i className="fal fa-arrow-right"></i> Move
+                                </a>
+                            </li>
+                            <li style={{ position: "relative" }}>
+                                <button
+                                    className="btn btn--secondary btn--small"
+                                    onClick={() => setShowDatePicker((prev) => !prev)}
+                                >
+                                    <i className="fal fa-calendar-alt"></i> Due Date
+                                </button>
+                                {showDatePicker && (
+                                    <div className="date-picker">
+                                        <input
+                                            type="date"
+                                            value={dueDate ? new Date(dueDate).toISOString().substr(0, 10) : ""}
+                                            onChange={(e) => setDueDate(e.target.value)}
+                                        />
+                                    </div>
+                                )}
+                            </li>
+                        </ul>
+                    </div>
                 </div>
             </div>
-        </div>
-    );
-};
+        );
+    };
+
 
 const EditCardTitle = ({ list, card, setEditingTitle }) => {
     const { board, setBoard } = useContext(globalContext);
@@ -330,8 +351,11 @@ const EditCardDescription = ({ list, card, setEditingDescription }) => {
                 description,
             }
         );
-        setEditingDescription(false);
         updateCard(board, setBoard)(list.id, data);
+    };
+
+    const onCancelEdit = () => {
+        setEditingDescription(false); // Cierra el modo de edición sin guardar cambios
     };
 
     return (
@@ -340,6 +364,18 @@ const EditCardDescription = ({ list, card, setEditingDescription }) => {
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
             />
+            <div className="edit-modal__form-actions">
+                <button className="btn btn--small" type="submit">
+                    Guardar
+                </button>
+                <button
+                    className="btn btn--secondary btn--small"
+                    type="button"
+                    onClick={onCancelEdit}
+                >
+                    Cancelar
+                </button>
+            </div>
         </form>
     );
 };
@@ -451,7 +487,7 @@ const CommentForm = ({
             onSubmit={comment ? onEditComment : onAddComment}
         >
             <textarea
-                placeholder="Leave a comment..."
+                placeholder="Deja un comentario..."
                 value={commentBody}
                 onChange={(e) => setCommentBody(e.target.value)}
             ></textarea>
@@ -473,5 +509,6 @@ const Members = ({ members }) => {
         </div>
     );
 };
+
 
 export default EditCardModal;

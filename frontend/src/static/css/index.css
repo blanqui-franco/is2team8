@@ -2532,3 +2532,26 @@ button, input, select, textarea, input::placeholder {
   margin: 8px 0;
   font-weight: bold;
 }
+.dropdown {
+  position: relative;
+  display: inline-block;
+}
+
+.dropdown__content {
+  display: none;
+  position: absolute;
+  background-color: white;
+  min-width: 160px;
+  box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+  z-index: 1;
+}
+
+.dropdown:hover .dropdown__content {
+  display: block;
+}
+
+.dropdown__button {
+  background: none;
+  border: none;
+  cursor: pointer;
+}

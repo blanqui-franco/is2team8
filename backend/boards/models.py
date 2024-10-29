@@ -193,8 +193,15 @@ class Card(models.Model):
         return False
 
 
-class Subtask(models.Model):
-    card = models.ForeignKey(Card, related_name="subtasks", on_delete=models.CASCADE)
-    title = models.CharField(max_length=100)
-    due_date = models.DateTimeField(null=True, blank=True)
-    status = models.CharField(max_length=10, choices=[('open', 'Open'), ('closed', 'Closed')], default='open')
+class ChecklistTask(models.Model):
+    card = models.ForeignKey(Card, on_delete=models.CASCADE, related_name="checklist_tasks")
+    task = models.CharField(max_length=255)
+    due_date = models.DateTimeField(null=True, blank=True)  # Fecha de vencimiento
+    is_completed = models.BooleanField(default=False)
+
+
+    def is_overdue(self):
+        if self.due_date and timezone.now() > self.due_date:
+            return True
+        return False
+
