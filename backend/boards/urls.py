@@ -1,5 +1,10 @@
 from django.urls import path, include
-from .views import BoardDetail, BoardList, BoardStar, ItemList, ItemDetail, ListShow, ListDetail, LabelList, LabelDetail, CommentList, CommentDetail, AttachmentDetail, AttachmentList
+from .views import (BoardDetail, BoardList, BoardStar, 
+                    ItemList, ItemDetail, ListShow, ListDetail, 
+                    LabelList, LabelDetail, CommentList, CommentDetail, 
+                    AttachmentDetail, AttachmentList, ChecklistTaskList, ChecklistTaskDetail)
+
+
 
 urlpatterns = [
     path('', BoardList.as_view()),
@@ -15,4 +20,6 @@ urlpatterns = [
     path('comments/<int:pk>/', CommentDetail.as_view()),
     path('attachments/', AttachmentList.as_view()),
     path('attachments/<int:pk>/', AttachmentDetail.as_view()),
+     path('cards/<int:card_id>/checklist-tasks/', ChecklistTaskList.as_view(), name='checklist-task-list'),
+    path('checklist-tasks/<int:pk>/', ChecklistTaskDetail.as_view(), name='checklist-task-detail'),
 ]

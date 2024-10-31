@@ -2,9 +2,9 @@ import uuid
 
 #import redis
 from boards.models import Notification
+from .models import ProjectInvitation  
 from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
-from django.core.mail import send_mail
 from django.db.models import Case, When
 from django.http import Http404
 from django.shortcuts import get_object_or_404
@@ -15,6 +15,9 @@ from rest_framework import generics, mixins, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from users.models import User
+import yagmail
+from projects.utils import send_email_with_yagmail
+
 
 
 class ProjectList(mixins.ListModelMixin, mixins.CreateModelMixin,
@@ -131,44 +134,42 @@ site_url = "http://localhost:8000/"
 #)
 
 
+
 class SendProjectInvite(APIView):
     permission_classes = [IsProjectAdminOrMemberReadOnly]
 
-    def get_object(self, pk):
-        project = get_object_or_404(Project, pk=pk)
-        self.check_object_permissions(self.request, project)
-        return project
-
     def post(self, request, pk):
-        project = self.get_object(pk)
+        project = self.get_object(pk)  # Asegúrate de tener una función para obtener el proyecto
         users = request.data.get('users', None)
 
         if users is None:
             return Response({'error': 'No users provided'}, status=status.HTTP_400_BAD_REQUEST)
+
         for username in users:
             try:
                 user = User.objects.get(username=username)
-                # No puedes invitar a un miembro ya existente
+                # Verifica que el usuario no sea ya miembro o propietario
                 if ProjectMembership.objects.filter(project=project, member=user).exists() or project.owner == user:
                     continue
 
-                # Crear una invitación en la base de datos
+                # Crea una invitación en la base de datos
                 invitation = ProjectInvitation.objects.create(user=user, project=project)
-                token = invitation.token  # Obtener el token generado
+                token = invitation.token  # Obtén el token generado
 
-                # Enviar correo de invitación
+                # Configura el asunto y mensaje
                 subject = f'{request.user.full_name} has invited you to join {project.title}'
-                message = (f'Click on the following link to accept: {site_url}projects/join/{token}')
-                to_email = user.email
+                message = f'Click on the following link to accept: {site_url}projects/join/{token}'
 
-                send_mail(subject, message, from_email=None, recipient_list=[to_email])
+                # Usa la función personalizada para enviar el correo
+                send_email_with_yagmail(user.email, subject, message)
 
-                # Crear una notificación
+                # Crea una notificación
                 Notification.objects.create(actor=request.user, recipient=user, verb='invited you to', target=project)
+
             except User.DoesNotExist:
                 continue
-        return Response(status=status.HTTP_204_NO_CONTENT)
 
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 class AcceptProjectInvite(APIView):
     def post(self, request, token, format=None):

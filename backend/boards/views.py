@@ -13,14 +13,14 @@ from rest_framework.exceptions import PermissionDenied
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from users.models import User
-
-from .models import Attachment, Board, Comment, Item, Label, List, Notification
+from .models import Attachment, Board, Comment, Item, Label, List, Notification,ChecklistTask
 from .permissions import CanViewBoard, IsAuthorOrReadOnly
 from .serializers import (AttachmentSerializer, BoardSerializer,
                           CommentSerializer, ItemSerializer, LabelSerializer,
                           ListSerializer, NotificationSerializer,
-                          ShortBoardSerializer)
+                          ShortBoardSerializer,ChecklistTaskSerializer)
 from boards.models import RecentlyViewedBoard
+
 
 
 #r = redis.Redis(
@@ -464,3 +464,22 @@ class NotificationList(APIView):
         Notification.objects.filter(
             recipient=self.request.user, unread=True).update(unread=False)
         return Response(status=status.HTTP_204_NO_CONTENT)
+    
+
+
+class ChecklistTaskList(generics.ListCreateAPIView):
+    serializer_class = ChecklistTaskSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        card_id = self.kwargs.get('card_id')
+        return ChecklistTask.objects.filter(card__id=card_id)
+
+class ChecklistTaskDetail(generics.RetrieveUpdateDestroyAPIView):
+    serializer_class = ChecklistTaskSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_object(self):
+        task = get_object_or_404(ChecklistTask, pk=self.kwargs.get('pk'))
+        return task
+

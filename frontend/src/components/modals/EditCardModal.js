@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useContext } from "react";
+import React, { useEffect, useState, useContext, useRef } from "react";
 import { v4 as uuidv4 } from "uuid";
 
 import Labels from "../boards/Labels";
@@ -9,30 +9,21 @@ import { timeSince, modalBlurHandler, authAxios } from "../../static/js/util";
 import { backendUrl } from "../../static/js/const";
 import { updateCard } from "../../static/js/board";
 import ProfilePic from "../boards/ProfilePic";
+import axios from 'axios';
 
-const EditCardModal = ({ card, list, setShowModal }) => {
+const EditCardModal = ({ card, list, setShowModal , itemId  }) => {
     const [editingTitle, setEditingTitle] = useState(false);
     const [editingDescription, setEditingDescription] = useState(false);
-    const [dueDate, setDueDate] = useState(card.dueDate || null); 
-    const [showDatePicker, setShowDatePicker] = useState(false); 
-    const [isOverdue, setIsOverdue] = useState(false); 
+    const [dueDate, setDueDate] = useState(card.dueDate || "");
+    const [showDatePicker, setShowDatePicker] = useState(false);
+    const [isOverdue, setIsOverdue] = useState(false);
     const { board, setBoard } = useContext(globalContext);
-    const [tasks, setTasks] = useState(card.tasks || []); // State for tasks
+    const [tasks, setTasks] = useState(card.tasks || []);
     const [newTaskDescription, setNewTaskDescription] = useState("");
     const [newTaskDueDate, setNewTaskDueDate] = useState("");
     const [showTaskForm, setShowTaskForm] = useState(false);
-   
 
-    useEffect(modalBlurHandler(setShowModal), []);
-    useBlurSetState(".edit-modal__title-edit", editingTitle, setEditingTitle);
-    useBlurSetState(".edit-modal__form",editingDescription,setEditingDescription);
-    
-    const {
-        data: comments,
-        addItem: addComment,
-        replaceItem: replaceComment,
-        removeItem: removeComment,
-    } = useAxiosGet(`/boards/comments/?item=${card.id}`);
+    const isMounted = useRef(true);
 
     useEffect(() => {
         const checkDueDate = () => {
@@ -41,76 +32,93 @@ const EditCardModal = ({ card, list, setShowModal }) => {
             setIsOverdue(dueDate && selectedDate <= now);
         };
         checkDueDate();
-    }, [dueDate]);
+    }, [dueDate, card.dueDate]); // Incluye `card.dueDate` para actualizar cuando cambie en el contexto
+    
+
+    useBlurSetState(".edit-modal__title-edit", editingTitle, setEditingTitle);
+    useBlurSetState(".edit-modal__form", editingDescription, setEditingDescription);
+
+    const {
+        data: comments,
+        addItem: addComment,
+        replaceItem: replaceComment,
+        removeItem: removeComment,
+    } = useAxiosGet(`/boards/comments/?item=${card.id}`);
+
+    
 
     const saveDueDate = async () => {
-        const { data } = await authAxios.put(
-            `${backendUrl}/boards/items/${card.id}/`,
-            {
-                title: card.title,
-                dueDate, 
-                tasks, // Save tasks to the backend if needed
-            }
-        );
-        updateCard(board, setBoard)(list.id, data); 
-        setShowDatePicker(false); 
+        if (!dueDate) {
+            console.error("La fecha de vencimiento no puede ser nula");
+            return;
+        }
+    
+        try {
+            const formattedDate = new Date(dueDate).toISOString();
+    
+            const response = await axios.put(`http://localhost:8000/boards/items/${itemId}/`, {
+                dueDate: formattedDate,
+            });
+    
+            console.log("Fecha de vencimiento guardada con éxito:", response.data);
+        } catch (error) {
+            console.error("Error al guardar la fecha límite:", error);
+        }
     };
+    
 
-    // Task management functions
     const saveTasks = async (updatedTasks) => {
         try {
+            console.log("Datos enviados en la solicitud PUT para las tareas:", { tasks: updatedTasks }); // Agregar console.log aquí
             const { data } = await authAxios.put(
-                `${backendUrl}/boards/items/${card.id}/`, // Asegúrate de que esta URL es la correcta
-                { tasks: updatedTasks } // Envía las tareas actualizadas al backend
+                `${backendUrl}/boards/items/${card.id}/`,
+                { tasks: updatedTasks }
             );
-            updateCard(board, setBoard)(list.id, data); // Actualiza el estado del board con las tareas nuevas
+            updateCard(board, setBoard)(list.id, data);
         } catch (error) {
             console.error("Error al guardar las tareas:", error);
         }
     };
+    
 
     const addTask = async (e) => {
         e.preventDefault();
         if (!newTaskDescription.trim()) return;
 
         const newTask = {
-            id: uuidv4(), // Genera un ID único para la tarea
+            id: uuidv4(),
             description: newTaskDescription,
             status: 'open',
             dueDate: newTaskDueDate,
         };
 
-        // Actualiza el estado de las tareas
         const updatedTasks = [...tasks, newTask];
         setTasks(updatedTasks);
-
-        // Guarda las tareas en el backend
         await saveTasks(updatedTasks);
 
-        // Limpia los campos de entrada
+        // Limpia los campos del formulario
         setNewTaskDescription("");
         setNewTaskDueDate("");
         setShowTaskForm(false);
     };
 
-    const removeTask = (taskId) => {
+    const removeTask = async (taskId) => {
         const updatedTasks = tasks.filter(task => task.id !== taskId);
         setTasks(updatedTasks);
-        saveTasks(updatedTasks); // Guarda los cambios en el backend
+        await saveTasks(updatedTasks);
     };
 
-    const toggleTaskStatus = (taskId) => {
+    const toggleTaskStatus = async (taskId) => {
         const updatedTasks = tasks.map(task =>
             task.id === taskId ? { ...task, status: task.status === 'open' ? 'closed' : 'open' } : task
         );
         setTasks(updatedTasks);
-        saveTasks(updatedTasks); // Guarda los cambios en el backend
+        await saveTasks(updatedTasks);
     };
 
     const checkTaskDueDate = (dueDate) => {
         const now = new Date();
-        const selectedDate = new Date(dueDate);
-        return dueDate && selectedDate <= now;
+        return dueDate && new Date(dueDate) <= now;
     };
 
     return (
@@ -178,10 +186,8 @@ const EditCardModal = ({ card, list, setShowModal }) => {
                             >
                                 Escribe una descripción
                             </button>
-                            
                         )
                     )}
-
                     <div className="edit-modal__section-header">
                         <div>
                             <i className="fal fa-tasks"></i> Tasks
@@ -226,13 +232,8 @@ const EditCardModal = ({ card, list, setShowModal }) => {
                         <div>
                             <i className="fal fa-paperclip"></i> Comentarios
                         </div>
-                        <div>
-                            <a className="btn btn--secondary btn--small">
-                            </a>
-                        </div>
                     </div>
 
-            
                     <CommentForm
                         card={card}
                         style={
@@ -242,7 +243,7 @@ const EditCardModal = ({ card, list, setShowModal }) => {
                         }
                         addComment={addComment}
                     />
-                    <Comments
+                         <Comments
                         card={card}
                         comments={comments || []}
                         replaceComment={replaceComment}
@@ -256,11 +257,6 @@ const EditCardModal = ({ card, list, setShowModal }) => {
                     </div>
 
                     <ul className="edit-modal__actions">
-                            <li>
-                                <button className="btn btn--secondary btn--small" onClick={saveDueDate}>
-                                    <i className="fal fa-save"></i> Save Due Date
-                                </button>
-                            </li>
                             <li>
                                 <a className="btn btn--secondary btn--small">
                                     <i className="fal fa-tags"></i> Edit Labels
@@ -277,28 +273,38 @@ const EditCardModal = ({ card, list, setShowModal }) => {
                                 </a>
                             </li>
                             <li style={{ position: "relative" }}>
-                                <button
-                                    className="btn btn--secondary btn--small"
-                                    onClick={() => setShowDatePicker((prev) => !prev)}
-                                >
-                                    <i className="fal fa-calendar-alt"></i> Due Date
-                                </button>
-                                {showDatePicker && (
-                                    <div className="date-picker">
-                                        <input
-                                            type="date"
-                                            value={dueDate ? new Date(dueDate).toISOString().substr(0, 10) : ""}
-                                            onChange={(e) => setDueDate(e.target.value)}
-                                        />
-                                    </div>
-                                )}
-                            </li>
-                        </ul>
-                    </div>
+                            <button
+                                className="btn btn--secondary btn--small"
+                                onClick={() => setShowDatePicker((prev) => !prev)}
+                            >
+                                <i className="fal fa-calendar-alt"></i> Due Date
+                            </button>
+
+                            {/* Muestra el selector de fecha cuando showDatePicker es true */}
+                            {showDatePicker && (
+                                <div className="date-picker">
+                                    <input
+                                        type="date"
+                                        value={dueDate ? new Date(dueDate).toISOString().substr(0, 10) : ""}
+                                        onChange={(e) => setDueDate(e.target.value)} // Solo actualiza el estado local
+                                    />
+                                    <button
+                                        className="btn btn--small"
+                                        onClick={saveDueDate} // Llama a saveDueDate al hacer clic en "Guardar"
+                                    >
+                                        Guardar
+                                    </button>
+                                </div>
+                            )}
+                        </li>
+                    </ul>
+                    <Members members={card.assigned_to} />
                 </div>
             </div>
+        </div>  
         );
     };
+
 
 
 const EditCardTitle = ({ list, card, setEditingTitle }) => {

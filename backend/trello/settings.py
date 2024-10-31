@@ -13,6 +13,7 @@ import os
 from datetime import timedelta
 
 from pathlib import Path
+from dotenv import load_dotenv
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -129,7 +130,14 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/3.1/howto/static-files/
 
-EMAIL_BACKEND = 'django.core.mail.backends.locmem.EmailBackend'
+
+
+load_dotenv()
+
+# Configuraciones de correo para yagmail
+EMAIL_HOST_USER = os.getenv("EMAIL_USER")
+EMAIL_HOST_PASSWORD = os.getenv("EMAIL_PASSWORD")
+
 
 STATIC_URL = '/static/'
 

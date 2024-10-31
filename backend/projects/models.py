@@ -40,6 +40,7 @@ class ProjectMembership(models.Model):
 
     class Meta:
         unique_together = ('project', 'member')
+        
 class ProjectInvitation(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     project = models.ForeignKey(Project, on_delete=models.CASCADE)

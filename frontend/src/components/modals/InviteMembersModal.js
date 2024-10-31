@@ -50,7 +50,7 @@ const InviteMembersModal = ({ project, setShowModal }) => {
             </div>
             <div className="label-modal__content">
                 <p className="label-modal__invite-header">
-                    <i class="fal fa-user"></i>
+                    <i className="fal fa-user"></i>
                     Enter Email Address or Username
                 </p>
                 <input

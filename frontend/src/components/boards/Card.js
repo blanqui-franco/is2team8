@@ -151,6 +151,7 @@ const Card = ({ card, list, provided, isDragging }) => {
                     card={card}
                     setShowModal={setShowEditModal}
                     list={list}
+                    itemId={card.id}
                 />
             )}
         </>

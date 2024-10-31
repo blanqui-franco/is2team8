@@ -13,6 +13,8 @@ class IsProjectAdminOrMemberReadOnly(permissions.BasePermission):
             return True
         return pmem.access_level == 2
 
+        
+
 class IsProjectMember(permissions.BasePermission):
     def has_object_permission(self, request, view, obj):
         try:
