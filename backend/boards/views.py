@@ -195,9 +195,19 @@ class ListDetail(generics.RetrieveUpdateDestroyAPIView):
 
     def get_object(self):
         pk = self.kwargs.get('pk')
-        list = get_object_or_404(List, pk=pk)
-        self.check_object_permissions(self.request, list.board)
-        return list
+        list_obj = get_object_or_404(List, pk=pk)
+        self.check_object_permissions(self.request, list_obj.board)
+        return list_obj
+
+    def delete(self, request, *args, **kwargs):
+        list_obj = self.get_object()
+
+        # Realizar cualquier verificación adicional si es necesario
+        # Como revisar que no tenga tarjetas activas o cualquier otra condición de negocio
+
+        # Eliminar la lista
+        list_obj.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class ItemList(generics.ListCreateAPIView):
@@ -426,13 +436,6 @@ class LabelDetail(generics.RetrieveUpdateDestroyAPIView):
         return label
 
 
-class LabelDetail(generics.RetrieveUpdateDestroyAPIView):
-
-    queryset = Label.objects.all()
-    serializer_class = LabelSerializer
-    permission_classes = [
-        permissions.AllowAny
-    ]
 
 
 class AttachmentList(generics.ListCreateAPIView):

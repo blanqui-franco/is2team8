@@ -39,7 +39,7 @@ class List(models.Model):
     created_at = models.DateTimeField(default=timezone.now)
     
     # Nuevo campo para el límite de WIP
-    max_wip = models.IntegerField(default=5, null=False, blank=False)  
+    max_wip = models.IntegerField(default=5)  
 
     def __str__(self):
         return self.title

@@ -60,7 +60,8 @@ class ListSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = List
-        exclude = ['board']  # Esto está bien siempre y cuando max_wip no esté aquí
+        
+        fields = ['id', 'title', 'max_wip', 'items']  
 
     def get_items(self, obj):
         queryset = Item.objects.filter(list=obj).order_by('order')

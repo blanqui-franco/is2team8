@@ -27,15 +27,13 @@ const List = ({ list, index }) => {
     const [cardTitle, setCardTitle] = useState("");
     const [editingTitle, setEditingTitle] = useState(false);
 
-    // Verificación del límite de WIP
-    const totalCards = list.items.length;
-    const isOverWIP = totalCards >= list.maxWIP;
-
-
    
-    const maxWIP = list.maxWIP || 0; // Asigna 0 si es undefined
+     // Asigna el límite de WIP con un valor predeterminado de 5 si no está definido
+     const maxWIP = list.maxWIP || 5; 
+     const totalCards = list.items.length;
+     const isOverWIP = totalCards >= maxWIP;
     
-    console.log(`Total Cards: ${totalCards}, Max WIP: ${list.maxWIP}, Is Over WIP: ${isOverWIP}`);
+   
 
     // Manejadores de eventos de enfoque y desenfoque
     useBlurSetState(".list__add-card-form", addingCard, setAddingCard);
@@ -62,6 +60,24 @@ const List = ({ list, index }) => {
         } catch (error) {
             console.error("Error al agregar la tarjeta:", error);
             alert("Hubo un problema al agregar la tarjeta.");
+        }
+    };
+
+    const handleDeleteList = async (listId) => {
+        
+        if (window.confirm("¿Estás seguro de que quieres eliminar esta lista?")) {
+            try {
+                await authAxios.delete(`${backendUrl}/boards/lists/${listId}/`);
+                // Filtra la lista eliminada y actualiza el estado del board
+                const updatedBoard = {
+                    ...board,
+                    lists: board.lists.filter((l) => l.id !== listId),
+                };
+                setBoard(updatedBoard);
+            } catch (error) {
+                console.error("Error al eliminar la lista:", error);
+                alert("No se pudo eliminar la lista. Intenta nuevamente.");
+            }
         }
     };
 
@@ -110,7 +126,12 @@ const List = ({ list, index }) => {
                             />
                         )}
                         <i className="far fa-ellipsis-h"></i>
+                        {/* Botón de eliminar lista */}
+                         <button onClick={() => handleDeleteList(list.id)} className="list__delete-button">
+                             Eliminar
+                        </button>
                     </div>
+
 
                     {/* Alerta visual cuando se excede el WIP */}
                     {isOverWIP && (
@@ -216,3 +237,7 @@ const EditList = ({ list, setEditingTitle }) => {
         </form>
     );
 };
+
+
+
+
