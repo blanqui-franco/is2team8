@@ -1,4 +1,4 @@
-#from boards.models import Board
+from boards.models import Board
 from django.contrib.contenttypes.fields import GenericRelation
 from django.db import models
 from django.utils import timezone
@@ -17,7 +17,8 @@ class Project(models.Model):
     members = models.ManyToManyField(
         settings.AUTH_USER_MODEL, through='ProjectMembership', through_fields=('project', 'member'))
 
-    boards = models.ManyToManyField('boards.Board', related_name='projects')
+    boards = GenericRelation(
+        Board, object_id_field='owner_id', content_type_field='owner_model')
 
     def __str__(self):
         return self.title

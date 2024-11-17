@@ -8,14 +8,13 @@ from rest_framework import serializers
 from rest_framework.fields import Field
 from users.models import User
 from users.serializers import UserSerializer
-from .models import Attachment, Board, Comment, Item, Label, List, Notification, ChecklistTask,Card
-
-
+from .models import Attachment, Board, Comment, Item, Label, List, Notification, ChecklistTask, Card
+from django.utils import timezone
 
 class LabelSerializer(serializers.ModelSerializer):
     class Meta:
         model = Label
-        exclude = ('board',)
+        fields = ['id', 'name', 'board']  # Incluye los campos necesarios aquí.
 
 
 class CommentSerializer(serializers.ModelSerializer):
@@ -23,7 +22,7 @@ class CommentSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Comment
-        exclude = ['item']
+        fields = ['id', 'author', 'content', 'created_at', 'item']  # Incluye los campos deseados
 
 
 class AttachmentSerializer(serializers.ModelSerializer):
@@ -35,24 +34,30 @@ class AttachmentSerializer(serializers.ModelSerializer):
 class ChecklistTaskSerializer(serializers.ModelSerializer):
     class Meta:
         model = ChecklistTask
-        fields = ['id', 'title', 'completed', 'card', 'due_date']
+        fields = ['id', 'description', 'completed', 'card', 'due_date']
+
+    # Validación para asegurarse de que due_date no sea una fecha pasada
+    def validate_due_date(self, value):
+        if value < timezone.now():
+            raise serializers.ValidationError("La fecha de vencimiento no puede ser en el pasado.")
+        return value
+
+    # Representación personalizada para incluir un estado de "atrasado" si due_date ha pasado
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        data['is_overdue'] = instance.due_date < timezone.now() if instance.due_date else False
+        return data
 
 
 class ItemSerializer(serializers.ModelSerializer):
-    labels = LabelSerializer(many=True, read_only=True)
-    attachments = AttachmentSerializer(many=True, read_only=True)
-    assigned_to = serializers.SerializerMethodField()
-    tasks = ChecklistTaskSerializer(many=True, read_only=True)  # Agregado campo tasks
+    labels = LabelSerializer(many=True, required=False)
+    attachments = AttachmentSerializer(many=True, required=False)
+    assigned_to = serializers.PrimaryKeyRelatedField(many=True, queryset=User.objects.all())
+    tasks = ChecklistTaskSerializer(many=True, required=False)
 
     class Meta:
         model = Item
         exclude = ['list']
-
-    def get_assigned_to(self, obj):
-        queryset = obj.assigned_to.all()
-        return UserSerializer(queryset, many=True).data
-
-
 
 
 class ListSerializer(serializers.ModelSerializer):
@@ -60,16 +65,13 @@ class ListSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = List
-        
-        fields = ['id', 'title', 'max_wip', 'items']  
+        fields = ['id', 'title', 'max_wip', 'items']
 
     def get_items(self, obj):
         queryset = Item.objects.filter(list=obj).order_by('order')
         return ItemSerializer(queryset, many=True).data
 
 
-
-# Para la página principal, excluye listas
 class ShortBoardSerializer(serializers.ModelSerializer):
     owner = serializers.SerializerMethodField()
     is_starred = serializers.SerializerMethodField()
@@ -104,7 +106,13 @@ class ShortBoardSerializer(serializers.ModelSerializer):
         background_keys = ["image", "image_url", "color"]
         if not any(item in data.keys() for item in background_keys):
             raise serializers.ValidationError("A board background must be provided")
+
+        if not self.context['request'].data.get('project'):
+            raise serializers.ValidationError("El campo 'project' es obligatorio al crear un board.")
+
+
         return data
+    
 
 
 
@@ -131,7 +139,7 @@ class CardSerializer(serializers.ModelSerializer):
 
 class NotificationSerializer(serializers.ModelSerializer):
     actor = UserSerializer(read_only=True)
-    target_model = serializers.SerializerMethodField()
+    target_model = serializers.CharField(source='target._meta.object_name', read_only=True)
     target = serializers.SerializerMethodField()
     action_object = serializers.SerializerMethodField()
 
@@ -139,23 +147,15 @@ class NotificationSerializer(serializers.ModelSerializer):
         model = Notification
         fields = ['id', 'actor', 'verb', 'target_model', 'target', 'action_object', 'unread', 'created_at']
 
-    def get_target_model(self, obj):
-        return obj.target._meta.object_name
-
     def get_target(self, obj):
-        object_app = obj.target._meta.app_label
-        object_name = obj.target._meta.object_name
-        if object_name == 'Project':
-            object_name = 'Short' + object_name
-        serializer_module_path = f'{object_app}.serializers.{object_name}Serializer'
-        serializer_class = import_string(serializer_module_path)
-        return serializer_class(obj.target).data
+        return self._get_serialized_object(obj.target)
 
     def get_action_object(self, obj):
-        object_app = obj.action_object._meta.app_label
-        object_name = obj.action_object._meta.object_name
+        return self._get_serialized_object(obj.action_object)
+
+    def _get_serialized_object(self, instance):
+        object_app = instance._meta.app_label
+        object_name = instance._meta.object_name
         serializer_module_path = f'{object_app}.serializers.{object_name}Serializer'
         serializer_class = import_string(serializer_module_path)
-        return serializer_class(obj.action_object).data
-
-
+        return serializer_class(instance).data

@@ -126,73 +126,70 @@ class ProjectMemberDetail(APIView):
         pmem.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
-
-site_url = "http://localhost:8000/"
-#r = redis.Redis(
-#    host=settings.REDIS_HOST, port=settings.REDIS_PORT, db=settings.REDIS_DB,
- #   charset="utf-8", decode_responses=True
-#)
-
-
+# Variable para URL base, mejor extraerla de settings
+SITE_URL = settings.SITE_URL if hasattr(settings, 'SITE_URL') else "http://localhost:8000/"
 
 class SendProjectInvite(APIView):
     permission_classes = [IsProjectAdminOrMemberReadOnly]
 
-    def post(self, request, pk):
-        project = self.get_object(pk)  # Asegúrate de tener una función para obtener el proyecto
-        users = request.data.get('users', None)
+    def get_object(self, pk):
+        return get_object_or_404(Project, pk=pk)
 
-        if users is None:
+    def post(self, request, pk):
+        project = self.get_object(pk)
+        users = request.data.get('users', [])
+
+        if not users:
             return Response({'error': 'No users provided'}, status=status.HTTP_400_BAD_REQUEST)
 
+        failed_users = []
         for username in users:
             try:
                 user = User.objects.get(username=username)
-                # Verifica que el usuario no sea ya miembro o propietario
+
+                # Verificar si el usuario ya es miembro o propietario
                 if ProjectMembership.objects.filter(project=project, member=user).exists() or project.owner == user:
                     continue
 
-                # Crea una invitación en la base de datos
+                # Crear invitación y enviar email
                 invitation = ProjectInvitation.objects.create(user=user, project=project)
-                token = invitation.token  # Obtén el token generado
-
-                # Configura el asunto y mensaje
                 subject = f'{request.user.full_name} has invited you to join {project.title}'
-                message = f'Click on the following link to accept: {site_url}projects/join/{token}'
-
-                # Usa la función personalizada para enviar el correo
+                message = f'Click on the following link to accept: {SITE_URL}projects/join/{invitation.token}'
                 send_email_with_yagmail(user.email, subject, message)
 
-                # Crea una notificación
+                # Crear notificación
                 Notification.objects.create(actor=request.user, recipient=user, verb='invited you to', target=project)
 
             except User.DoesNotExist:
-                continue
+                failed_users.append(username)
 
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        response_data = {'message': 'Invitations sent.'}
+        if failed_users:
+            response_data['failed_users'] = failed_users
+        return Response(response_data, status=status.HTTP_204_NO_CONTENT)
+
 
 class AcceptProjectInvite(APIView):
-    def post(self, request, token, format=None):
+    def post(self, request, token):
         try:
             invitation = ProjectInvitation.objects.get(token=token)
         except ProjectInvitation.DoesNotExist:
-            return Response(status=status.HTTP_400_BAD_REQUEST)
+            return Response({'error': 'Invalid token'}, status=status.HTTP_400_BAD_REQUEST)
 
         user = invitation.user
         project = invitation.project
 
         if not ProjectMembership.objects.filter(project=project, member=user).exists():
-            # Crear la membresía del proyecto
+            # Crear membresía y eliminar invitación
             ProjectMembership.objects.create(project=project, member=user)
-            invitation.delete()  # Eliminar la invitación después de aceptarla
+            invitation.delete()
 
-            # Eliminar notificaciones relacionadas
+            # Eliminar notificación de invitación
             Notification.objects.filter(
                 verb='invited you to', recipient=user,
                 target_model=ContentType.objects.get(model='project'), target_id=project.id
             ).delete()
 
-            return Response(status=status.HTTP_204_NO_CONTENT)
+            return Response({'message': 'Invitation accepted'}, status=status.HTTP_204_NO_CONTENT)
         else:
-            return Response(status=status.HTTP_400_BAD_REQUEST)
-
+            return Response({'error': 'Already a member'}, status=status.HTTP_400_BAD_REQUEST)

@@ -13,7 +13,7 @@ import useAxiosGet from "../../hooks/useAxiosGet";
 import { backendUrl } from "../../static/js/const";
 
 const getBackgroundModalPosition = (boardElem) => {
-    // pass in ref.current
+    // Calcula la posición del modal de fondo
     if (!boardElem) return null;
     return {
         top: boardElem.getBoundingClientRect().y + "px",
@@ -27,31 +27,43 @@ const getBackgroundModalPosition = (boardElem) => {
 
 const AddBoardModal = ({ setShowAddBoardModal, addBoard, project }) => {
     const [selectedBackground, setSelectedBackground] = useState(0);
-    const [extraBackground, setExtraBackground] = useState(null); // Did we choose something from the BoardBackground modal?
+    const [extraBackground, setExtraBackground] = useState(null); // Fondo personalizado seleccionado
     const [title, setTitle] = useState("");
     const [showBoardModal, setShowBoardModal] = useState(false);
     const boardElem = useRef(null);
+    
     useEffect(modalBlurHandler(setShowAddBoardModal), []);
 
     const onSubmit = async (e) => {
         e.preventDefault();
 
+        // Validación para el título
+        if (!title.trim()) {
+            alert("Please enter a title for the board.");
+            return;
+        }
+
         const bg = options[selectedBackground];
         const formData = { title };
+        
+        // Asignar el proyecto si está disponible
         if (project !== 0) formData.project = project;
+        
+        // Asignar fondo de color o imagen
         if (bg[1]) {
-            // Image_url
             formData.image_url = bg[2];
         } else {
-            // color
-            formData.color = bg[0].substring(1); // We don't store # char in backend
+            formData.color = bg[0].substring(1); // Remover "#" del color
         }
-        const { data } = await authAxios.post(
-            `${backendUrl}/boards/`,
-            formData
-        );
-        addBoard(data);
-        setShowAddBoardModal(false);
+
+        try {
+            const { data } = await authAxios.post(`${backendUrl}/boards/`, formData);
+            addBoard(data); // Añadir el nuevo tablero al estado
+            setShowAddBoardModal(false); // Cerrar el modal
+        } catch (error) {
+            console.error("Error creating board:", error);
+            alert("There was an error creating the board. Please try again.");
+        }
     };
 
     const accessKey = process.env.REACT_APP_UNSPLASH_API_ACCESS_KEY;
@@ -59,7 +71,7 @@ const AddBoardModal = ({ setShowAddBoardModal, addBoard, project }) => {
         `https://api.unsplash.com/photos?client_id=${accessKey}`,
         false
     );
-    const options = useMemo(() => getBoardBackgroundOptions(data), [data]); // So we don't reshuffle on state change
+    const options = useMemo(() => getBoardBackgroundOptions(data), [data]); // Evitar reorganización de opciones en cada render
     if (extraBackground) options[0] = extraBackground;
 
     useEffect(() => {
@@ -78,7 +90,7 @@ const AddBoardModal = ({ setShowAddBoardModal, addBoard, project }) => {
                     position={getBackgroundModalPosition(boardElem.current)}
                 />
             ) : null}
-            <div className="addboard-modal">
+            <div className="addboard-modal" role="dialog" aria-modal="true">
                 <form className="addboard-modal__left" onSubmit={onSubmit}>
                     <div
                         className="addboard-modal__title-block"
@@ -91,10 +103,14 @@ const AddBoardModal = ({ setShowAddBoardModal, addBoard, project }) => {
                             }}
                             className="addboard-modal__title"
                             placeholder="Add board title"
+                            aria-label="Board title"
+                            required
                         />
                         <button
+                            type="button"
                             className="addboard-modal__exit"
                             onClick={() => setShowAddBoardModal(false)}
+                            aria-label="Close modal"
                         >
                             <i className="fal fa-times"></i>
                         </button>
@@ -103,6 +119,7 @@ const AddBoardModal = ({ setShowAddBoardModal, addBoard, project }) => {
                         <button
                             className="addboard-modal__create btn btn--disabled"
                             disabled
+                            aria-disabled="true"
                         >
                             Create Board
                         </button>
@@ -119,24 +136,23 @@ const AddBoardModal = ({ setShowAddBoardModal, addBoard, project }) => {
                 <div className="addboard-modal__right" ref={boardElem}>
                     {options.map((option, index) => (
                         <button
-                            onClick={() => {
-                                setSelectedBackground(index);
-                            }}
+                            key={uuidv4()}
+                            onClick={() => setSelectedBackground(index)}
                             className={`addboard-modal__color-box${
                                 option[1] ? " color-box--img" : ""
                             }`}
                             style={getAddBoardStyle(...option)}
-                            key={uuidv4()}
+                            aria-pressed={selectedBackground === index}
                         >
-                            {" "}
-                            {selectedBackground == index && (
+                            {selectedBackground === index && (
                                 <i className="fal fa-check"></i>
-                            )}{" "}
+                            )}
                         </button>
                     ))}
                     <button
                         className="addboard-modal__color-box"
                         onClick={() => setShowBoardModal(true)}
+                        aria-label="More background options"
                     >
                         <i className="fal fa-ellipsis-h"></i>
                     </button>

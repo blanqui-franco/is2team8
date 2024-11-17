@@ -30,6 +30,7 @@ const TabOne = ({ display, register }) => {
         placeholder="Username"
         ref={register({ required: true })}
       />
+    
     </div>
   );
 };

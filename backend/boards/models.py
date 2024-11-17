@@ -3,28 +3,22 @@ from django.contrib.contenttypes.models import ContentType
 from django.db import models
 from django.db.models import Max
 from django.utils import timezone
-#from users.models import User
 from django.conf import settings
-from django.contrib.auth.models import User
-from projects.models import Project
-from django.db import models
 
 class Board(models.Model):
-    owner_model = models.ForeignKey(ContentType, blank=False, null=False,
-                                    related_name='board',
-                                    on_delete=models.CASCADE,
-                                    limit_choices_to=models.Q(app_label='users', model='user') | models.Q(app_label='projects', model='project'))
+    owner_model = models.ForeignKey(
+        ContentType, blank=False, null=False,
+        related_name='board',
+        on_delete=models.CASCADE,
+        limit_choices_to=models.Q(app_label='users', model='user') | models.Q(app_label='projects', model='project')
+    )
     owner_id = models.PositiveIntegerField(null=False, blank=False)
     owner = GenericForeignKey('owner_model', 'owner_id')
-    project = models.ForeignKey('projects.Project', on_delete=models.CASCADE,null=False)
     title = models.CharField(max_length=255, blank=False, null=False)
     description = models.TextField(blank=True, null=False)
-
-    # Only one of the below will be used from the frontend
     image = models.ImageField(blank=True, upload_to='board_images')
     image_url = models.URLField(blank=True, null=False)
     color = models.CharField(blank=True, null=False, max_length=6)  # Hex Code
-
     created_at = models.DateTimeField(default=timezone.now)
 
     def __str__(self):
@@ -32,14 +26,11 @@ class Board(models.Model):
 
 
 class List(models.Model):
-    board = models.ForeignKey(
-        Board, on_delete=models.CASCADE, related_name="lists")
+    board = models.ForeignKey(Board, on_delete=models.CASCADE, related_name="lists")
     title = models.CharField(max_length=255, blank=False, null=False)
-    order = models.DecimalField(max_digits=30, decimal_places=15 , blank=True, null=True)
+    order = models.DecimalField(max_digits=30, decimal_places=15, blank=True, null=True)
     created_at = models.DateTimeField(default=timezone.now)
-    
-    # Nuevo campo para el límite de WIP
-    max_wip = models.IntegerField(default=5)  
+    max_wip = models.IntegerField(default=5)  # Nuevo campo para el límite de WIP
 
     def __str__(self):
         return self.title
@@ -49,14 +40,12 @@ class List(models.Model):
         if not self.order and filtered_objects.count() == 0:
             self.order = 2 ** 16 - 1
         elif not self.order:
-            self.order = filtered_objects.aggregate(Max('order'))[
-                'order__max'] + 2 ** 16 - 1
-        return super().save(*args, **kwargs)
+            self.order = filtered_objects.aggregate(Max('order'))['order__max'] + 2 ** 16 - 1
+        super().save(*args, **kwargs)
 
 
 class Label(models.Model):
-    board = models.ForeignKey(
-        Board, on_delete=models.CASCADE, related_name='labels')
+    board = models.ForeignKey(Board, on_delete=models.CASCADE, related_name='labels')
     title = models.CharField(max_length=255, blank=True, null=False)
     color = models.CharField(max_length=255, blank=False, null=False)
 
@@ -65,17 +54,13 @@ class Label(models.Model):
 
 
 class Item(models.Model):
-    list = models.ForeignKey(
-        List, on_delete=models.CASCADE, related_name='items')
+    list = models.ForeignKey(List, on_delete=models.CASCADE, related_name='items')
     title = models.CharField(max_length=255, blank=False, null=False)
     description = models.TextField(blank=True, null=False)
-
-    # Only one of the below will be used from the frontend
     image = models.ImageField(blank=True, upload_to='item_images')
     image_url = models.URLField(blank=True, null=False)
     color = models.CharField(blank=True, null=False, max_length=6)  # Hex Code
-
-    order = models.DecimalField(max_digits=30,decimal_places=15, blank=True, null=True)
+    order = models.DecimalField(max_digits=30, decimal_places=15, blank=True, null=True)
     labels = models.ManyToManyField(Label, blank=True)
     assigned_to = models.ManyToManyField(settings.AUTH_USER_MODEL, blank=True)
     due_date = models.DateTimeField(blank=True, null=True)
@@ -88,21 +73,17 @@ class Item(models.Model):
         # Verificar el límite de WIP antes de guardar el ítem
         if self.list.items.count() >= self.list.max_wip:
             raise ValueError(f"Cannot add more items. WIP limit of {self.list.max_wip} reached.")
-        
         filtered_objects = Item.objects.filter(list=self.list)
         if not self.order and filtered_objects.count() == 0:
             self.order = 2 ** 16 - 1 
         elif not self.order:
-            self.order = filtered_objects.aggregate(Max('order'))[
-                'order__max'] + 2 ** 16 - 1
-        return super().save(*args, **kwargs)
+            self.order = filtered_objects.aggregate(Max('order'))['order__max'] + 2 ** 16 - 1
+        super().save(*args, **kwargs)
 
 
 class Comment(models.Model):
-    author = models.ForeignKey(
-        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='comments')
-    item = models.ForeignKey(
-        Item, on_delete=models.CASCADE, related_name='comments')
+    author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='comments')
+    item = models.ForeignKey(Item, on_delete=models.CASCADE, related_name='comments')
     body = models.TextField(blank=False, null=False)
     created_at = models.DateTimeField(default=timezone.now)
 
@@ -111,58 +92,32 @@ class Comment(models.Model):
 
 
 class Attachment(models.Model):
-    item = models.ForeignKey(
-        Item, on_delete=models.CASCADE, related_name='attachments')
+    item = models.ForeignKey(Item, on_delete=models.CASCADE, related_name='attachments')
     upload = models.FileField(upload_to='attachments')
 
 
-# https://help.trello.com/article/793-receiving-trello-notifications
-extra_word_dict = {'commented': 'on'}
-
-
 class Notification(models.Model):
-    actor = models.ForeignKey(
-        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='actions')
-    recipient = models.ForeignKey(
-        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='notifications')
+    actor = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='actions')
+    recipient = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='notifications')
     verb = models.CharField(max_length=255, blank=False, null=False)
     unread = models.BooleanField(default=True, blank=False, db_index=True)
-
     created_at = models.DateTimeField(default=timezone.now)
-
-    # Optional, <actor> opened <board>
-    target_model = models.ForeignKey(ContentType, blank=True, null=True,
-                                     related_name='target_obj',
-                                     on_delete=models.CASCADE)
+    target_model = models.ForeignKey(ContentType, blank=True, null=True, related_name='target_obj', on_delete=models.CASCADE)
     target_id = models.PositiveIntegerField(null=True, blank=True)
     target = GenericForeignKey('target_model', 'target_id')
-
-    action_object_model = models.ForeignKey(ContentType, blank=True, null=True,
-                                            related_name='action_object_obj',
-                                            on_delete=models.CASCADE)
+    action_object_model = models.ForeignKey(ContentType, blank=True, null=True, related_name='action_object_obj', on_delete=models.CASCADE)
     action_object_id = models.PositiveIntegerField(null=True, blank=True)
-    action_object = GenericForeignKey(
-        'action_object_model', 'action_object_id')
+    action_object = GenericForeignKey('action_object_model', 'action_object_id')
 
     def __str__(self):
         if self.target:
             if self.action_object:
-                return f'{self.actor.full_name} {self.verb} {self.action_object} {extra_word_dict[self.verb]} {self.target}'
+                return f'{self.actor.username} {self.verb} {self.action_object} on {self.target}'
             else:
-                return f'{self.actor.full_name} {self.verb} {self.target}'
+                return f'{self.actor.username} {self.verb} {self.target}'
         else:
-            return f'{self.actor.full_name} {self.verb}'
+            return f'{self.actor.username} {self.verb}'
 
-    """
-    <actor> commented <comment> on <item>, you were assigned to this item
-    <actor> assigned you to <item>
-    <actor> invited you to <project>
-    <actor> made you admin of <project>
-    """
-
-
-
-#from .models import Board  # Asegúrate de que Board está definido en este archivo o lo importas correctamente
 
 class RecentlyViewedBoard(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
@@ -182,8 +137,8 @@ class Card(models.Model):
     due_date = models.DateField(null=True, blank=True)
     assigned_user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)
     label = models.CharField(max_length=100, blank=True)
-    state = models.ForeignKey('List', on_delete=models.CASCADE)
-    board = models.ForeignKey('Board', on_delete=models.CASCADE)
+    state = models.ForeignKey(List, on_delete=models.CASCADE)
+    board = models.ForeignKey(Board, on_delete=models.CASCADE)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
@@ -192,16 +147,21 @@ class Card(models.Model):
             return True
         return False
 
+    def __str__(self):
+        return self.title
+
 
 class ChecklistTask(models.Model):
+    description = models.TextField()  
     card = models.ForeignKey(Card, on_delete=models.CASCADE, related_name="checklist_tasks")
     task = models.CharField(max_length=255)
     due_date = models.DateTimeField(null=True, blank=True)  # Fecha de vencimiento
-    is_completed = models.BooleanField(default=False)
-
+    completed = models.BooleanField(default=False)
 
     def is_overdue(self):
         if self.due_date and timezone.now() > self.due_date:
             return True
         return False
 
+    def __str__(self):
+        return f'{self.task} - {"Completed" if self.completed else "Pending"}'
