@@ -22,7 +22,8 @@ class CommentSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Comment
-        fields = ['id', 'author', 'content', 'created_at', 'item']  # Incluye los campos deseados
+        exclude = ['item']
+        #fields = ['id', 'author', 'content', 'created_at', 'item']  # Incluye los campos deseados
 
 
 class AttachmentSerializer(serializers.ModelSerializer):
@@ -52,8 +53,16 @@ class ChecklistTaskSerializer(serializers.ModelSerializer):
 class ItemSerializer(serializers.ModelSerializer):
     labels = LabelSerializer(many=True, required=False)
     attachments = AttachmentSerializer(many=True, required=False)
-    assigned_to = serializers.PrimaryKeyRelatedField(many=True, queryset=User.objects.all())
+    #assigned_to = serializers.PrimaryKeyRelatedField(many=True, queryset=User.objects.all())
+    
+    #assigned_to = serializers.SerializerMethodField()
+    assigned_to = serializers.PrimaryKeyRelatedField(
+        queryset=User.objects.all(), required=False, allow_null=True
+    )
     tasks = ChecklistTaskSerializer(many=True, required=False)
+    def get_assigned_to(self, obj):
+        queryset = obj.assigned_to.all()
+        return UserSerializer(queryset, many=True).data
 
     class Meta:
         model = Item
@@ -107,8 +116,8 @@ class ShortBoardSerializer(serializers.ModelSerializer):
         if not any(item in data.keys() for item in background_keys):
             raise serializers.ValidationError("A board background must be provided")
 
-        if not self.context['request'].data.get('project'):
-            raise serializers.ValidationError("El campo 'project' es obligatorio al crear un board.")
+        #if not self.context['request'].data.get('project'):
+        #    raise serializers.ValidationError("El campo 'project' es obligatorio al crear un board.")
 
 
         return data

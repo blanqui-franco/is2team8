@@ -62,7 +62,14 @@ class Item(models.Model):
     color = models.CharField(blank=True, null=False, max_length=6)  # Hex Code
     order = models.DecimalField(max_digits=30, decimal_places=15, blank=True, null=True)
     labels = models.ManyToManyField(Label, blank=True)
-    assigned_to = models.ManyToManyField(settings.AUTH_USER_MODEL, blank=True)
+    assigned_to = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="assigned_items"
+    )
+    #assigned_to = models.ManyToManyField(settings.AUTH_USER_MODEL, blank=True)
     due_date = models.DateTimeField(blank=True, null=True)
     created_at = models.DateTimeField(default=timezone.now)
 

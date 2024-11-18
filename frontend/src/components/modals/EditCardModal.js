@@ -11,7 +11,7 @@ import { updateCard } from "../../static/js/board";
 import ProfilePic from "../boards/ProfilePic";
 import axios from 'axios';
 
-const EditCardModal = ({ card, list, setShowModal , itemId  }) => {
+const EditCardModal = ({ card, list, setShowModal , itemId,project}) => {
     const [editingTitle, setEditingTitle] = useState(false);
     const [editingDescription, setEditingDescription] = useState(false);
     const [dueDate, setDueDate] = useState(card.dueDate || "");
@@ -25,6 +25,22 @@ const EditCardModal = ({ card, list, setShowModal , itemId  }) => {
 
     const isMounted = useRef(true);
 
+     // Estado para el miembro asignado y si estamos asignando
+    const [assignedMember, setAssignedMember] = useState(card.assigned_to || null);
+    const [isAssigning, setIsAssigning] = useState(false);
+     // Manejo de asignación de miembros
+    const handleAssignMember = async (member) => {
+        try {
+            const { data } = await authAxios.put(`${backendUrl}/boards/items/${card.id}/`, {
+                assigned_to: member.id,
+            });
+            setAssignedMember(member); // Actualizar el miembro asignado en el estado local
+            updateCard(board, setBoard)(list.id, data); // Actualizar el card en el estado general
+            setIsAssigning(false); // Cerrar el selector de asignación
+        } catch (error) {
+            console.error("Error al asignar el miembro:", error);
+        }
+    };
     useEffect(() => {
         const checkDueDate = () => {
             const now = new Date();
@@ -263,10 +279,30 @@ const EditCardModal = ({ card, list, setShowModal , itemId  }) => {
                                 </a>
                             </li>
                             <li>
-                                <a className="btn btn--secondary btn--small">
-                                    <i className="fal fa-user"></i> Change Members
-                                </a>
+                                <button
+                                    className="btn btn--secondary btn--small"
+                                    onClick={() => setIsAssigning(!isAssigning)}
+                                >
+                                    <i className="fal fa-user"></i> ASignar miembro
+                                </button>
                             </li>
+                            {/* Selección de miembros cuando se esté asignando */}
+                            {isAssigning && (
+                                <div className="edit-modal__member-list">
+                                    <p>Seleccione un miembro:</p>
+                                    <ul className="team__members-list">
+                                        {project.members.map((member) => (
+                                            <li
+                                                key={member.id}
+                                                className={`member-item ${assignedMember?.id === member.id ? "assigned" : ""}`}
+                                                onClick={() => handleAssignMember(member)}
+                                            >
+                                                {member.full_name}
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            )}
                             <li>
                                 <a className="btn btn--secondary btn--small">
                                     <i className="fal fa-arrow-right"></i> Move
@@ -298,7 +334,9 @@ const EditCardModal = ({ card, list, setShowModal , itemId  }) => {
                             )}
                         </li>
                     </ul>
-                    <Members members={card.assigned_to} />
+                     {/* Mostrar el miembro asignado actual */}
+                     <Members members={assignedMember ? [assignedMember] : []} />
+                    {/*<Members members={card.assigned_to || []} />*/}
                 </div>
             </div>
         </div>  
@@ -506,7 +544,7 @@ const CommentForm = ({
     );
 };
 
-const Members = ({ members }) => {
+const Members = ({members = [] }) => {
     return (
         <div className="edit-modal__members">
             {members.map((member) => (

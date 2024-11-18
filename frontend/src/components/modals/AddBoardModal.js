@@ -39,7 +39,7 @@ const AddBoardModal = ({ setShowAddBoardModal, addBoard, project }) => {
 
         // Validación para el título
         if (!title.trim()) {
-            alert("Please enter a title for the board.");
+            alert("Por favor coloca un nombre para el tablero");
             return;
         }
 
@@ -61,8 +61,8 @@ const AddBoardModal = ({ setShowAddBoardModal, addBoard, project }) => {
             addBoard(data); // Añadir el nuevo tablero al estado
             setShowAddBoardModal(false); // Cerrar el modal
         } catch (error) {
-            console.error("Error creating board:", error);
-            alert("There was an error creating the board. Please try again.");
+            console.error("Error al crear el tablero:", error.response?.data || error.message);
+            alert(`Error al crear el tablero: ${error.response?.data?.detail || "Error desconocido"}`);
         }
     };
 
@@ -102,8 +102,8 @@ const AddBoardModal = ({ setShowAddBoardModal, addBoard, project }) => {
                                 setTitle(e.target.value);
                             }}
                             className="addboard-modal__title"
-                            placeholder="Add board title"
-                            aria-label="Board title"
+                            placeholder="Agrega un titulo para el tablero"
+                            aria-label="Titulo del tablero"
                             required
                         />
                         <button
@@ -121,14 +121,14 @@ const AddBoardModal = ({ setShowAddBoardModal, addBoard, project }) => {
                             disabled
                             aria-disabled="true"
                         >
-                            Create Board
+                            Crear Tablero
                         </button>
                     ) : (
                         <button
                             className="addboard-modal__create btn"
                             type="submit"
                         >
-                            Create Board
+                            Crear Tablero
                         </button>
                     )}
                 </form>

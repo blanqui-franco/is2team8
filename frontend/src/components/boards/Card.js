@@ -125,7 +125,7 @@ const Card = ({ card, list, provided, isDragging }) => {
                             {card.attachments.length}
                         </p>
                     )}
-                    <Members members={card.assigned_to} />
+                    <Members members={card.assigned_to || []} />
                     {isEditing && (
                         <>
                             <EditControls
@@ -158,7 +158,7 @@ const Card = ({ card, list, provided, isDragging }) => {
     );
 };
 
-const Members = ({ members }) => (
+/*const Members = ({ members }) => (
     <div className="card__members">
         <div className="member member--add">
             <i className="fal fa-plus"></i>
@@ -167,7 +167,15 @@ const Members = ({ members }) => (
             <ProfilePic user={member} key={uuidv4()} />
         ))}
     </div>
+);*/
+const Members = ({ members = [] }) => (
+    <div className="card__members">
+        {members.map((member) => (
+            <ProfilePic user={member} key={member.id} />
+        ))}
+    </div>
 );
+
 
 export const getEditControlsSidePosition = (cardElem, offset = 0) => {
     // pass in ref.current
@@ -204,7 +212,7 @@ const EditControls = ({
                     </button>
                 </li>
                 <li>
-                    <i className="fal fa-user"></i> Change Members
+                    <i className="fal fa-user"></i> Asignar Usuario
                 </li>
                 <li>
                     <i className="fal fa-arrow-right"></i> Move

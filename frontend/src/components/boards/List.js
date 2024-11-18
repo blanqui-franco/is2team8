@@ -58,7 +58,7 @@ const List = ({ list, index }) => {
             setCardTitle("");
             addCard(board, setBoard)(list.id, data);
         } catch (error) {
-            console.error("Error al agregar la tarjeta:", error);
+            console.error("Error al agregar la tarjeta:", error.response?.data || error.message);
             alert("Hubo un problema al agregar la tarjeta.");
         }
     };
