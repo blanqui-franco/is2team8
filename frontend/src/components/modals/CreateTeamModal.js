@@ -48,44 +48,43 @@ const CreateTeamModal = ({ setShowModal, addProject }) => {
     return (
         <div className="create-team">
             <div className="create-team__form">
-                <p className="create-team__title">Start a Project</p>
+                <p className="create-team__title">Comenzar un Proyecto</p>
                 <p className="create-team__subtitle">
-                    Boost your productivity by making it easier for everyone to
-                    access boards in one location.
+                    Aumente su productividad con los tableros de YvyPlan, diseñados para que los personalice a su manera
                 </p>
 
                 <form onSubmit={handleSubmit(onSubmit)}>
-                    <label htmlFor="title">Project Name</label>
+                    <label htmlFor="title">Nombre del Proyecto</label>
                     <input
                         name="title"
                         ref={register({ required: true })}
                         type="text"
-                        placeholder="The Boys"
+                        placeholder="titulo"
                         onBlur={animateFaces}
                     />
 
-                    <label htmlFor="description">Project Description</label>
+                    <label htmlFor="description">Descripción del Proyecto</label>
                     <textarea
                         name="description"
                         ref={register}
-                        placeholder="Get your members on board with a few words about your project"
+                        placeholder="cuenta un poco del proyecto al equipo"
                     ></textarea>
 
-                    <label htmlFor="members">Invite Members</label>
+                    <label htmlFor="members">Invitar Miembros</label>
                     <input
                         name="members"
                         ref={register}
                         type="text"
-                        placeholder="Type in username or email"
+                        placeholder="escriba usuario o email"
                     />
 
                     {titleValue.trim() !== "" ? (
                         <button type="submit" className="btn">
-                            Create Project
+                            Crear Proyecto
                         </button>
                     ) : (
                         <button className="btn btn--disabled" disabled>
-                            Create Project
+                            Crear Proyecto
                         </button>
                     )}
                 </form>
