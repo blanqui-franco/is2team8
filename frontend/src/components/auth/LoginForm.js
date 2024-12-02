@@ -16,6 +16,7 @@ const LoginForm = ({setErrMsgs}) => {
       const url = `${backendUrl}/token/`;
       try {
         const res = await axios.post(url, data);
+        console.log("Token recibido:", res.data); // Verifica el token aquí
         login(res.data);
       }
       catch (err) {

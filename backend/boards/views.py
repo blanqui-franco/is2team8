@@ -211,67 +211,54 @@ class ListDetail(generics.RetrieveUpdateDestroyAPIView):
 
 
 class ItemList(generics.ListCreateAPIView):
-
     serializer_class = ItemSerializer
     permission_classes = [CanViewBoard]
 
     def get_list(self, pk):
-        list = get_object_or_404(List, pk=pk)
-        self.check_object_permissions(self.request, list.board)
-        return list
+        list_instance = get_object_or_404(List, pk=pk)
+        self.check_object_permissions(self.request, list_instance.board)
+        return list_instance
 
     def get_queryset(self, *args, **kwargs):
+        list_id = self.kwargs.get('list_id')
+        if not list_id:
+            raise Http404("La lista no existe.")
+        list_instance = self.get_list(list_id)
 
-        list_id = self.request.GET.get('list', None)
         search = self.request.GET.get('q', None)
-
-        if list_id is not None:
-            list = self.get_list(list_id)
-
-        if search is not None:
-            project_ids = ProjectMembership.objects.filter(
-                member=self.request.user).values_list('project__id', flat=True)
-            boards = Board.objects.filter(Q(owner_id__in=project_ids, owner_model=ContentType.objects.get(model='project')) |
-                                          Q(owner_id=self.request.user.id, owner_model=ContentType.objects.get(model='user')))
-            if list_id is not None:
-                return Item.objects.filter(list=list, title__icontains=search)[:2]
-            lists = List.objects.filter(board__in=boards)
-            return Item.objects.filter(list__in=lists, title__icontains=search)[:2]
-
-        return Item.objects.filter(list=list).order_by('order')
-
-    def get(self, request, *args, **kwargs):
-
-        list_id = self.request.GET.get('list', None)
-        search = self.request.GET.get('q', None)
-
-        if list_id is None and search is None:
-            return Response(status=status.HTTP_400_BAD_REQUEST)
-
-        return super().get(request, *args, **kwargs)
+        queryset = Item.objects.filter(list=list_instance).order_by('order')
+        if search:
+            queryset = queryset.filter(title__icontains=search)
+        return queryset
 
     def post(self, request, *args, **kwargs):
-        if 'list' in request.data.keys():
-            list = self.get_list(request.data['list'])
-            return super().post(request, *args, **kwargs)
-        return Response(status=status.HTTP_400_BAD_REQUEST)
+        # Verificar que la lista esté incluida en los datos de solicitud
+        list_id = request.data.get('list')
+        if not list_id:
+            return Response({"error": "El campo 'list' es obligatorio."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Validar que la lista pertenece al usuario
+        self.get_list(list_id)
+        return super().post(request, *args, **kwargs)
 
     def perform_create(self, serializer):
-        list = self.get_list(self.request.data['list'])
-        serializer.save(list=list)
-
+        list_instance = self.get_list(self.request.data['list'])
+        serializer.save(list=list_instance)
 
 class ItemDetail(generics.RetrieveUpdateDestroyAPIView):
 
     serializer_class = ItemSerializer
     permission_classes = [CanViewBoard]
 
-    def get_user(self, username, board):
-        user = get_object_or_404(User, username=username)
-        # Can this user view the board though?
+    def get_user(self, pk, board):
+        print(f"Verificando usuario: {pk} para tablero: {board.id}")
+        user = get_object_or_404(User, pk=pk)
+        print("Usuario:",user)
         if user.can_view_board(board):
+            print("pk:",pk)
             return user
         return None
+        
 
     def get_label(self, pk, board):
         label = get_object_or_404(Label, pk=pk)
@@ -295,9 +282,11 @@ class ItemDetail(generics.RetrieveUpdateDestroyAPIView):
     def put(self, request, *args, **kwargs):
         item = self.get_object()
         if "assigned_to" in request.data:
+            print("Usuario asignado:", request.data["assigned_to"])
+            #user = self.get_user(request.data["assigned_to"], item.list.board)
             user = self.get_user(request.data["assigned_to"], item.list.board)
             if user is None:
-                return Response({"assigned_to": ["This user cannot view this board"]}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({"assigned_to": ["El usuario no puede ver el tablero"]}, status=status.HTTP_400_BAD_REQUEST)
 
         if "labels" in request.data:
             label = self.get_label(request.data["labels"], item.list.board)
@@ -308,10 +297,11 @@ class ItemDetail(generics.RetrieveUpdateDestroyAPIView):
             list = self.get_list(request.data['list'], item.list.board)
             if list is None:
                 return Response({'list': ["This list doesn't belong to this baord"]}, status=status.HTTP_400_BAD_REQUEST)
-
+        print("Datos recibidos en la solicitud PUT:", request.data)
         return super().put(request, *args, **kwargs)
 
     def perform_update(self, serializer):
+        print(f"Datos recibidos en el PuUT: {self.request.data}")
         # Same logic as BoardDetail
         req_data = self.request.data
 
@@ -486,3 +476,27 @@ class ChecklistTaskDetail(generics.RetrieveUpdateDestroyAPIView):
         task = get_object_or_404(ChecklistTask, pk=self.kwargs.get('pk'))
         return task
 
+class BoardStatsView(APIView):
+    def get(self, request, board_id):
+        board = get_object_or_404(Board, id=board_id)
+        tasks = Item.objects.filter(board=board)
+
+        # Distribución de tareas por estado
+        tasks_by_status = tasks.values('status').annotate(count=Count('status'))
+
+        # Tareas atrasadas
+        now = timezone.now()
+        overdue_count = tasks.filter(due_date__lt=now, completed=False).count()
+        on_time_count = tasks.filter(due_date__gte=now).count()
+
+        # Tareas por usuario asignado
+        tasks_by_user = tasks.values('assigned_to__username').annotate(count=Count('assigned_to'))
+
+        return Response({
+            "tasks_by_status": {t['status']: t['count'] for t in tasks_by_status},
+            "tasks_overdue": {
+                "overdue": overdue_count,
+                "on_time": on_time_count
+            },
+            "tasks_by_user": {t['assigned_to__username']: t['count'] for t in tasks_by_user}
+        })

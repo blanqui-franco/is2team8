@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useContext } from "react";
 import { v4 as uuidv4 } from "uuid";
+import { Link } from "react-router-dom";
 import { DragDropContext, Droppable } from "react-beautiful-dnd";
 import useDocumentTitle from "../hooks/useDocumentTitle";
 import useBlurSetState from "../hooks/useBlurSetState";
@@ -69,6 +70,12 @@ const Board = (props) => {
                 />
             )}
             <p className="board__subtitle">{board.owner.title}</p>
+
+            {/* Enlace al Dashboard */}
+            <Link to={`/b/${board.id}/dashboard`} className="board__dashboard-link">
+                Ver Dashboard
+            </Link>
+
             <DragDropContext onDragEnd={onDragEnd(board, setBoard)}>
                 <Droppable
                     droppableId={"board" + board.id.toString()}
@@ -145,7 +152,7 @@ const CreateList = ({ board, setBoard, setAddingList }) => {
             />
             {title.trim() !== "" ? (
                 <button type="submit" className="btn btn--small">
-                    Add List
+                    Agregar Lista
                 </button>
             ) : (
                 <button
@@ -153,7 +160,7 @@ const CreateList = ({ board, setBoard, setAddingList }) => {
                     className="btn btn--small btn--disabled"
                     disabled
                 >
-                    Add List
+                    Agregar Lista
                 </button>
             )}
         </form>

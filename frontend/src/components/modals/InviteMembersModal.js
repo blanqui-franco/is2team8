@@ -43,7 +43,7 @@ const InviteMembersModal = ({ project, setShowModal }) => {
             style={getInviteMembersPosition()}
         >
             <div className="label-modal__header">
-                <p>Add Members</p>
+                <p>Agregar Miembros</p>
                 <button onClick={() => setShowModal(false)}>
                     <i className="fal fa-times"></i>
                 </button>
@@ -51,23 +51,23 @@ const InviteMembersModal = ({ project, setShowModal }) => {
             <div className="label-modal__content">
                 <p className="label-modal__invite-header">
                     <i className="fal fa-user"></i>
-                    Enter Email Address or Username
+                    ingrese email o usario
                 </p>
                 <input
                     className="label-modal__input"
                     type="text"
                     name="members"
-                    placeholder="e.g. vikhyat@trello.com"
+                    placeholder="ej. fatima@gmail.com"
                     value={members}
                     onChange={(e) => setMembers(e.target.value)}
                 />
                 {members.trim() !== "" ? (
                     <button className="btn" onClick={handleInvite}>
-                        Invite to Project
+                        Invitar al Proyecto
                     </button>
                 ) : (
                     <button className="btn btn--disabled" disabled>
-                        Invite to Project
+                        Invitar al Proyecto
                     </button>
                 )}
             </div>

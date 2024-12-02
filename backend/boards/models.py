@@ -4,6 +4,7 @@ from django.db import models
 from django.db.models import Max
 from django.utils import timezone
 from django.conf import settings
+from django.core.exceptions import ValidationError
 
 class Board(models.Model):
     owner_model = models.ForeignKey(
@@ -62,22 +63,34 @@ class Item(models.Model):
     color = models.CharField(blank=True, null=False, max_length=6)  # Hex Code
     order = models.DecimalField(max_digits=30, decimal_places=15, blank=True, null=True)
     labels = models.ManyToManyField(Label, blank=True)
-    assigned_to = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name="assigned_items"
-    )
+    #assigned_to = models.ForeignKey(
+     #   settings.AUTH_USER_MODEL,
+      #  on_delete=models.SET_NULL,
+       # null=True,
+        #blank=True,
+        #related_name="assigned_items"
+    #)
+    assigned_to = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL)
     #assigned_to = models.ManyToManyField(settings.AUTH_USER_MODEL, blank=True)
     due_date = models.DateTimeField(blank=True, null=True)
     created_at = models.DateTimeField(default=timezone.now)
+    def clean(self):
+        # Asegúrate de que el usuario asignado pertenece al proyecto relacionado
+        # Validar que el usuario asignado pertenezca al proyecto relacionado
+        if self.assigned_to:
+            board = self.list.board
+            if board.owner_model.model == "project":
+                project = board.owner
+                if not project.members.filter(id=self.assigned_to.id).exists():
+                    raise ValidationError(f"El usuario {self.assigned_to} no pertenece al proyecto {project}.")
+       
 
     def __str__(self):
         return self.title
 
     def save(self, *args, **kwargs):
         # Verificar el límite de WIP antes de guardar el ítem
+        self.clean()
         if self.list.items.count() >= self.list.max_wip:
             raise ValueError(f"Cannot add more items. WIP limit of {self.list.max_wip} reached.")
         filtered_objects = Item.objects.filter(list=self.list)

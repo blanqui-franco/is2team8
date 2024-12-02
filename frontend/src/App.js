@@ -11,6 +11,8 @@ import Home from "./pages/Home";
 import Board from "./pages/Board";
 import Project from "./pages/Project";
 import Error404 from "./pages/Error404";
+import Dashboard from './components/Dashboard/Dashboard';
+
 
 function App() {
     const { checkAuth, checkedAuth, authUser } = useContext(globalContext);
@@ -18,12 +20,14 @@ function App() {
     useEffect(() => {
         checkAuth();
     }, []);
-
+    console.log("Auth user:", authUser); // Debug
+    console.log("Checked auth:", checkedAuth); // Debug
     if (!checkedAuth) {
         return null;
     }
 
-    if (authUser)
+    if (authUser){
+       console.log("Usuario autenticado, cargando aplicación"); // Debug//
         return (
             <>
                 <Route path="/" component={Header} />
@@ -32,11 +36,17 @@ function App() {
                     <Route exact path="/b/:id" component={Board} />
                     <Route exact path="/test" component={AddBoardModal} />
                     <Route exact path="/p/:id" component={Project} />
+                    <Route
+                        exact
+                        path="/b/:id/dashboard"
+                        render={(props) => <Dashboard boardId={props.match.params.id} />}
+                    />
                     <Route path="" component={Error404} />
                 </Switch>
             </>
         );
-    else
+    }else
+     console.log("Usuario no autenticado, mostrando pantalla de inicio"); // Debug
         return (
             <>
                 <Route

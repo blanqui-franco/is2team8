@@ -11,7 +11,11 @@ import { updateCard } from "../../static/js/board";
 import ProfilePic from "../boards/ProfilePic";
 import axios from 'axios';
 
-const EditCardModal = ({ card, list, setShowModal , itemId,project}) => {
+const EditCardModal = ({ card, list, setShowModal , itemId}) => {
+    const { project } = useContext(globalContext); // Obtener el proyecto desde el contexto global
+    console.log("Project en EditCardModal:", project);
+    console.log("Datos de la tarjeta:", card);
+
     const [editingTitle, setEditingTitle] = useState(false);
     const [editingDescription, setEditingDescription] = useState(false);
     const [dueDate, setDueDate] = useState(card.dueDate || "");
@@ -23,22 +27,51 @@ const EditCardModal = ({ card, list, setShowModal , itemId,project}) => {
     const [newTaskDueDate, setNewTaskDueDate] = useState("");
     const [showTaskForm, setShowTaskForm] = useState(false);
 
-    const isMounted = useRef(true);
 
-     // Estado para el miembro asignado y si estamos asignando
     const [assignedMember, setAssignedMember] = useState(card.assigned_to || null);
     const [isAssigning, setIsAssigning] = useState(false);
-     // Manejo de asignación de miembros
+    const [projectMembers, setProjectMembers] = useState([]);
+    const [loadingMembers, setLoadingMembers] = useState(true); // Para manejar la carga de datos
+    // Cargar miembros del proyecto cuando el proyecto esté disponible
+    useEffect(() => {
+        console.log("projectoid:", project); 
+        if (project?.id) {
+            fetchProjectMembers();
+        }
+    }, [project]);
+
+      // Cargar los miembros del proyecto desde el backend
+    const fetchProjectMembers = async () => {
+        try {
+            const { data } = await authAxios.get(`${backendUrl}/projects/${project.id}/members/`);
+            setProjectMembers(data);
+        } catch (error) {
+            console.error("Error al obtener los miembros del proyecto:", error);
+        } finally {
+            setLoadingMembers(false);
+        }
+    };
+    
+     // Asignar un miembro a la tarjeta
     const handleAssignMember = async (member) => {
         try {
-            const { data } = await authAxios.put(`${backendUrl}/boards/items/${card.id}/`, {
-                assigned_to: member.id,
-            });
-            setAssignedMember(member); // Actualizar el miembro asignado en el estado local
-            updateCard(board, setBoard)(list.id, data); // Actualizar el card en el estado general
-            setIsAssigning(false); // Cerrar el selector de asignación
+            console.log("Asignando miembro:", member); 
+            const response = await authAxios.put(
+                `${backendUrl}/boards/items/${card.id}/`,
+                { assigned_to: member ? member.id : null },
+                {
+                    headers: {
+                        Authorization: `Bearer ${localStorage.getItem('accessToken')}`, // Incluye el token
+                    },
+                }
+            );
+            setAssignedMember(member); // Actualiza el estado local
+            console.log("Asignación exitosa:", response.data);
+            console.log("Encabezados de la solicitud:", authAxios.defaults.headers);
+
         } catch (error) {
-            console.error("Error al asignar el miembro:", error);
+            console.log("Encabezados de la solicitud:", authAxios.defaults.headers);
+            console.error("Error al asignar el miembro:",error.response || error);
         }
     };
     useEffect(() => {
@@ -259,14 +292,13 @@ const EditCardModal = ({ card, list, setShowModal , itemId,project}) => {
                         }
                         addComment={addComment}
                     />
-                         <Comments
+                        <Comments
                         card={card}
                         comments={comments || []}
                         replaceComment={replaceComment}
                         removeComment={removeComment}
                     />
                 </div>
-
                 <div className="edit-modal__right">
                     <div className="edit-modal__section-header">
                         <div>Actions</div>
@@ -278,31 +310,7 @@ const EditCardModal = ({ card, list, setShowModal , itemId,project}) => {
                                     <i className="fal fa-tags"></i> Edit Labels
                                 </a>
                             </li>
-                            <li>
-                                <button
-                                    className="btn btn--secondary btn--small"
-                                    onClick={() => setIsAssigning(!isAssigning)}
-                                >
-                                    <i className="fal fa-user"></i> ASignar miembro
-                                </button>
-                            </li>
                             {/* Selección de miembros cuando se esté asignando */}
-                            {isAssigning && (
-                                <div className="edit-modal__member-list">
-                                    <p>Seleccione un miembro:</p>
-                                    <ul className="team__members-list">
-                                        {project.members.map((member) => (
-                                            <li
-                                                key={member.id}
-                                                className={`member-item ${assignedMember?.id === member.id ? "assigned" : ""}`}
-                                                onClick={() => handleAssignMember(member)}
-                                            >
-                                                {member.full_name}
-                                            </li>
-                                        ))}
-                                    </ul>
-                                </div>
-                            )}
                             <li>
                                 <a className="btn btn--secondary btn--small">
                                     <i className="fal fa-arrow-right"></i> Move
@@ -334,13 +342,63 @@ const EditCardModal = ({ card, list, setShowModal , itemId,project}) => {
                             )}
                         </li>
                     </ul>
-                     {/* Mostrar el miembro asignado actual */}
-                     <Members members={assignedMember ? [assignedMember] : []} />
-                    {/*<Members members={card.assigned_to || []} />*/}
-                </div>
+                    <div className="edit-modal__section">
+                        <div className="edit-modal__section-header">
+                            <i className="fal fa-user"></i> Asignar Miembro
+                        </div>
+                        <button className="btn btn--small"
+                            onClick={() => setIsAssigning((prev) => !prev)}
+                            >
+                            {isAssigning ? "Cancelar" : "Asignar Miembro"}
+                        </button>
+                        {isAssigning && (
+                        <div>
+                     {loadingMembers ? (
+    <p>Cargando miembros...</p>
+) : projectMembers.length > 0 ? (
+    <select
+        id="assign-member-select"
+        value={assignedMember ? assignedMember.id : ""}
+        onChange={(e) => {
+            const selectedMember = projectMembers.find(
+                (member) => member.id === parseInt(e.target.value, 10)
+            );
+            handleAssignMember(selectedMember || null);
+        }}
+    >
+        <option value="">Seleccionar miembro</option>
+        {projectMembers.map((member) => (
+            <option key={member.id} value={member.id}>
+                {member.full_name}
+            </option>
+        ))}
+    </select>
+) : (
+    <p>No hay miembros disponibles en este proyecto.</p>
+)}
             </div>
-        </div>  
-        );
+            )}
+            {assignedMember && (
+                <div className="edit-modal__assigned-member">
+                    <p>
+                        Miembro asignado: {assignedMember.full_name} (
+                        {assignedMember.username})
+                    </p>
+                    <button
+                        onClick={() => handleAssignMember(null)}
+                        className="btn btn--small btn--danger"
+                    >
+                        Quitar miembro
+                    </button>
+                </div>
+            )}
+        </div>
+            <Members members={assignedMember ? [assignedMember] : []} />
+                    {/*<Members members={card.assigned_to || []} />*/}
+    </div>
+    </div>
+        </div> 
+    );
     };
 
 
@@ -553,6 +611,5 @@ const Members = ({members = [] }) => {
         </div>
     );
 };
-
 
 export default EditCardModal;

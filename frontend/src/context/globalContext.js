@@ -7,4 +7,6 @@ export default React.createContext({
     // The below two are to reduce prop drilling to List and Card
     board: null, // The board we are currently viewing, via useAxiosGet in Board.js.
     setBoard: null, // The setter returned by useAxioGet in Board.js
+    project: null, // Nuevo: El proyecto actual
+    setProject: null, // Nuevo: Setter para actualizar el proyecto
 });

@@ -29,9 +29,11 @@ const getCardStyle = (isDragging, isEditing, defaultStyle) => {
 };
 
 const Card = ({ card, list, provided, isDragging }) => {
-    const { board, setBoard } = useContext(globalContext);
+    const { board, setBoard,project } = useContext(globalContext);
     const [isEditing, setIsEditing] = useState(false);
     const [title, setTitle] = useState(card.title);
+  //  const { project } = useContext(globalContext);
+    console.log("Project que se pasa a EditCardModal:", project);
 
     const [showEditModal, setShowEditModal] = useState(false);
     const [showLabelModal, setShowLabelModal] = useState(false);
@@ -43,7 +45,9 @@ const Card = ({ card, list, provided, isDragging }) => {
         if (e.target.className.includes("pen")) return;
         setShowEditModal(true);
     };
-
+    useEffect(() => {
+        console.log("Project dentro de Cssard:", project); // Debug
+    }, [project]);
     useEffect(() => {
         if (!isEditing) {
             setShowLabelModal(false);
@@ -152,9 +156,14 @@ const Card = ({ card, list, provided, isDragging }) => {
                     setShowModal={setShowEditModal}
                     list={list}
                     itemId={card.id}
-                />
-            )}
+                    project={project}
+                    
+                    
+                />           
+)}
+            
         </>
+        
     );
 };
 

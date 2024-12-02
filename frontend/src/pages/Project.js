@@ -24,21 +24,29 @@ const Project = (props) => {
     const { tab } = qs.parse(props.location.search, {
         ignoreQueryPrefix: true,
     });
-    const { authUser } = useContext(globalContext);
+
+    // Estado global
+    const { authUser,  project: globalProject, setProject: setGlobalProject} = useContext(globalContext);
 
     const [curTab, setCurTab] = useState(tab || 1);
     const [isEditing, setIsEditing] = useState(false);
     const [isInviting, setIsInviting] = useState(false);
     useBlurSetState(".label-modal", isInviting, setIsInviting);
-
-    const { data: project, loading, setData: setProject } = useAxiosGet(
+       // Estado local con useAxiosGet
+    const { data: project, loading, setData: setProjectLocal  } = useAxiosGet(
         `/projects/${id}/`
     );
     const { data: boards, addItem: addBoard } = useAxiosGet(
         "/boards?project=" + id
     );
     useDocumentTitle(project ? `${project.title} | YvyPlan` : "");
-
+ // Sincronización del proyecto local con el global
+    useEffect(() => {
+    if (project && (!globalProject || project.id !== globalProject.id)) {
+        console.log("Sincronizando proyecto con el contexto global:", project);
+        setGlobalProject(project); // Actualiza el contexto global
+    }
+}, [project, globalProject, setGlobalProject]);
     if (!project && loading) return null;
     if (!project && !loading) return <Error404 />; // No project with given id
 
@@ -74,7 +82,7 @@ const Project = (props) => {
                         ) : (
                             <EditForm
                                 project={project}
-                                setProject={setProject}
+                                setProject={setProjectLocal}
                                 setIsEditing={setIsEditing}
                             />
                         )}
@@ -124,14 +132,13 @@ const Project = (props) => {
                 {curTab == 2 && (
                     <div className="team__members">
                         <div className="team__members-header">
-                            <p>Team Members ({project.members.length})</p>
+                            <p>Miembros ({project.members.length})</p>
                             {authUserAccessLevel === 2 && (
                                 <button
                                     className="btn btn--medium"
                                     onClick={() => setIsInviting(true)}
                                 >
-                                    <i className="fal fa-user-plus"></i> Invite
-                                    Team Members
+                                    <i className="fal fa-user-plus"></i> Invitar
                                 </button>
                             )}
                         </div>
@@ -144,7 +151,7 @@ const Project = (props) => {
                                         ...authUser,
                                         access_level: authUserAccessLevel,
                                     }}
-                                    setProject={setProject}
+                                    setProject={setProjectLocal}
                                 />
                             ))}
                         </ul>
@@ -161,7 +168,7 @@ const Project = (props) => {
     );
 };
 
-const EditForm = ({ project, setProject, setIsEditing }) => {
+const EditForm = ({ project, setProject, setIsEditing,setGlobalProject }) => {
     const { register, setValue, handleSubmit, errors, watch } = useForm();
     const titleValue = watch("title", "");
 
@@ -176,7 +183,8 @@ const EditForm = ({ project, setProject, setIsEditing }) => {
                 `${backendUrl}/projects/${project.id}/`,
                 data
             );
-            setProject(resData);
+            setProject(resData);// Actualiza el estado local
+            setGlobalProject(resData); // Sincroniza el cambio con el contexto global
             setIsEditing(false);
         } catch (error) {
             console.log(error);

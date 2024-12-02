@@ -39,7 +39,7 @@ const Home = () => {
                         <>
                             <div className="home__section">
                                 <p className="home__title">
-                                    <i className="fal fa-star"></i> Starred Boards
+                                    <i className="fal fa-star"></i> Tableros favoritos
                                 </p>
                             </div>
                             <div className="home__boards">
@@ -87,7 +87,7 @@ const Home = () => {
                                 setShowAddBoardModal(true);
                             }}
                         >
-                            <i className="fal fa-plus"></i> Create
+                            <i className="fal fa-plus"></i> Crear
                         </button>
                     </div>
                     <div className="home__boards">
@@ -140,7 +140,7 @@ const Home = () => {
                                                     setShowAddBoardModal(true);
                                                 }}
                                             >
-                                                <i className="fal fa-plus"></i> Create Board
+                                                <i className="fal fa-plus"></i> Crear Tablero
                                             </button>
                                         </div>
                                     </div>

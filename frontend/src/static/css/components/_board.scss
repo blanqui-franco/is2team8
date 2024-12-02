@@ -262,3 +262,17 @@
         }
     }
 }
+.dashboard-link {
+    display: block;
+    margin-top: 10px;
+    text-align: center;
+    color: #007bff;
+    text-decoration: none;
+}
+
+.dashboard-link:hover {
+    text-decoration: underline;
+}
+select {
+    display: block; /* Asegura que el select sea visible */
+}

@@ -19,7 +19,7 @@ from projects.views import ProjectList, ProjectDetail, ProjectMemberList, Projec
 urlpatterns = [
     path('', ProjectList.as_view()),
     path('<int:pk>/', ProjectDetail.as_view()),
-    path('<int:pk>/members/', ProjectMemberList.as_view()),
+    path('<int:pk>/members/', ProjectMemberList.as_view(),name='project-members'),
     path('members/<int:pk>/', ProjectMemberDetail.as_view()),
     path('<int:pk>/invite/', SendProjectInvite.as_view()),
     path('join/<str:token>/', AcceptProjectInvite.as_view())

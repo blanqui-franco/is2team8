@@ -75,21 +75,26 @@ class ProjectDetail(APIView):
 
 
 class ProjectMemberList(mixins.ListModelMixin,
-                        generics.GenericAPIView,
-                        mixins.CreateModelMixin):
+                        mixins.CreateModelMixin,
+                        generics.GenericAPIView):
     serializer_class = ProjectMembershipSerializer
     permission_classes = [IsProjectAdminOrMemberReadOnly]
 
     def get_queryset(self):
-        try:
-            project = Project.objects.get(pk=self.kwargs['pk'])
-            query_set = ProjectMembership.objects.filter(project=project)
-        except:
-            raise Http404
-        return query_set
+        project = get_object_or_404(Project, pk=self.kwargs['pk'])
+        return ProjectMembership.objects.filter(project=project)
+
+    def get_serializer_context(self):
+        # Pasar el proyecto en el contexto para usarlo en el serializador
+        context = super().get_serializer_context()
+        context['project'] = get_object_or_404(Project, pk=self.kwargs['pk'])
+        return context
 
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
+
+    def post(self, request, *args, **kwargs):
+        return self.create(request, *args, **kwargs)
 
 
 class ProjectMemberDetail(APIView):

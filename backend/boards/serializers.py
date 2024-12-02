@@ -66,7 +66,24 @@ class ItemSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Item
-        exclude = ['list']
+        fields = '__all__'
+        #exclude = ['list']
+    
+    def validate_assigned_to(self, value):
+        print(f"Validando usuario asignado: {value}")
+        if not value:
+            return None 
+        if self.instance:  # Al actualizar
+            board = self.instance.list.board
+        elif self.initial_data.get('list'):  # Al crear
+            list_instance = List.objects.get(pk=self.initial_data['list'])
+            board = list_instance.board
+        #board = self.instance.list.board if self.instance else self.initial_data.get('list').board
+        if board and board.owner_model.model == "project":
+            project = board.owner
+            if not project.members.filter(id=value.id).exists():
+                raise serializers.ValidationError(f"El usuario {value} no pertenece al proyecto {project}.")
+        return value
 
 
 class ListSerializer(serializers.ModelSerializer):
@@ -163,6 +180,8 @@ class NotificationSerializer(serializers.ModelSerializer):
         return self._get_serialized_object(obj.action_object)
 
     def _get_serialized_object(self, instance):
+        if instance is None:
+            return None  # Retorna None o un valor por defecto
         object_app = instance._meta.app_label
         object_name = instance._meta.object_name
         serializer_module_path = f'{object_app}.serializers.{object_name}Serializer'

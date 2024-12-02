@@ -9,6 +9,7 @@ import {
     LOGIN,
     LOGOUT,
     SET_BOARD_CONTEXT,
+    SET_PROJECT
 } from "./globalReducer";
 
 const GlobalProvider = (props) => {
@@ -18,6 +19,7 @@ const GlobalProvider = (props) => {
         checkedAuth: false,
         board: null,
         setBoard: null,
+        project: null, // Nuevo: Proyecto actual
     });
 
     const login = async (resData) => {
@@ -57,14 +59,23 @@ const GlobalProvider = (props) => {
     const setBoardContext = (board, setBoard) => {
         dispatch({ type: SET_BOARD_CONTEXT, board, setBoard });
     };
+    const setProject = (project) => {
+        console.log("Actualizando el contexto global con el proyecto:", project);
+        dispatch({ type: SET_PROJECT, project });
+    };
+    
 
     return (
+        <>
+         {console.log("Estado global actual:", globalState)} {/* Depuración */}
         <globalContext.Provider
             value={{
                 authUser: globalState.authUser,
                 checkedAuth: globalState.checkedAuth,
                 board: globalState.board,
                 setBoard: globalState.setBoard,
+                project: globalState.project, // Proyecto actual
+                setProject, // Setter para el proyecto
                 checkAuth,
                 login,
                 logout,
@@ -73,7 +84,9 @@ const GlobalProvider = (props) => {
         >
             {props.children}
         </globalContext.Provider>
+        </>
     );
+    
 };
 
 export default GlobalProvider;
