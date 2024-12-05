@@ -31,7 +31,7 @@ class List(models.Model):
     title = models.CharField(max_length=255, blank=False, null=False)
     order = models.DecimalField(max_digits=30, decimal_places=15, blank=True, null=True)
     created_at = models.DateTimeField(default=timezone.now)
-    max_wip = models.IntegerField(default=5)  # Nuevo campo para el límite de WIP
+    max_wip = models.IntegerField(blank=False, null=False)  # Campo obligatorio
 
     def __str__(self):
         return self.title

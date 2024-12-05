@@ -96,6 +96,13 @@ class ListSerializer(serializers.ModelSerializer):
     def get_items(self, obj):
         queryset = Item.objects.filter(list=obj).order_by('order')
         return ItemSerializer(queryset, many=True).data
+    
+    def validate_max_wip(self, value):
+        if value is None:
+            raise serializers.ValidationError("The WIP limit is required.")
+        if value <= 0:
+            raise serializers.ValidationError("The WIP limit must be greater than 0.")
+        return value
 
 
 class ShortBoardSerializer(serializers.ModelSerializer):

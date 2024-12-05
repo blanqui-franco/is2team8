@@ -29,7 +29,7 @@ const List = ({ list, index }) => {
 
    
      // Asigna el límite de WIP con un valor predeterminado de 5 si no está definido
-     const maxWIP = list.maxWIP || 5; 
+     const maxWIP = list.maxWIP ; 
      const totalCards = list.items.length;
      const isOverWIP = totalCards >= maxWIP;
     

@@ -2555,3 +2555,13 @@ button, input, select, textarea, input::placeholder {
   border: none;
   cursor: pointer;
 }
+
+.list__wip-alert {
+  background-color: #ffe0e0;
+  color: #ff0000;
+  font-weight: bold;
+  text-align: center;
+  padding: 5px;
+  border-radius: 5px;
+  margin-bottom: 10px;
+}

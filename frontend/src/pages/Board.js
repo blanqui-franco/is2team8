@@ -5,7 +5,7 @@ import { DragDropContext, Droppable } from "react-beautiful-dnd";
 import useDocumentTitle from "../hooks/useDocumentTitle";
 import useBlurSetState from "../hooks/useBlurSetState";
 import useAxiosGet from "../hooks/useAxiosGet";
-import { addList, onDragEnd } from "../static/js/board";
+import { onAddList, onDragEnd } from "../static/js/board";
 import List from "../components/boards/List";
 import { authAxios, handleBackgroundBrightness } from "../static/js/util";
 import { backendUrl } from "../static/js/const";
@@ -49,6 +49,9 @@ const Board = (props) => {
 
     const [isBackgroundDark, setIsBackgroundDark] = useState(false);
     useEffect(handleBackgroundBrightness(board, setIsBackgroundDark), [board]);
+
+
+
 
     if (!board && loading) return null;
     if (!board && !loading) return <Error404 />;
@@ -130,14 +133,25 @@ const Board = (props) => {
 
 const CreateList = ({ board, setBoard, setAddingList }) => {
     const [title, setTitle] = useState("");
+    const [maxWip, setMaxWip] = useState(""); // Nuevo estado para el límite WIP
 
     const onAddList = async (e) => {
         e.preventDefault();
+        if (!maxWip || maxWip <= 0) {
+            alert("Please enter a valid WIP limit greater than 0.");
+            return;
+        }
+
         const { data } = await authAxios.post(`${backendUrl}/boards/lists/`, {
             board: board.id,
             title,
+            max_wip: maxWip, // Enviar el límite WIP al backend
         });
-        addList(board, setBoard)(data);
+
+        setBoard((prevBoard) => ({
+            ...prevBoard,
+            lists: [...prevBoard.lists, data],
+        }));
         setAddingList(false);
     };
 
@@ -147,22 +161,24 @@ const CreateList = ({ board, setBoard, setAddingList }) => {
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 type="text"
-                name="title"
-                placeholder="Enter list title"
+                placeholder="Ingrese el nombre de la lista"
+                required
             />
-            {title.trim() !== "" ? (
-                <button type="submit" className="btn btn--small">
-                    Agregar Lista
-                </button>
-            ) : (
-                <button
-                    type="submit"
-                    className="btn btn--small btn--disabled"
-                    disabled
-                >
-                    Agregar Lista
-                </button>
-            )}
+            <input
+                value={maxWip}
+                onChange={(e) => setMaxWip(e.target.value)}
+                type="number"
+                placeholder="Ingrese el limite WIP "
+                required
+                min={1}
+            />
+            <button
+                type="submit"
+                className="btn btn--small"
+                disabled={!title.trim() || !maxWip}
+            >
+                Add List
+            </button>
         </form>
     );
 };
