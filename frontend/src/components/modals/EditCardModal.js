@@ -12,8 +12,11 @@ import ProfilePic from "../boards/ProfilePic";
 import axios from 'axios';
 
 const EditCardModal = ({ card, list, setShowModal , itemId}) => {
-    const { project } = useContext(globalContext); // Obtener el proyecto desde el contexto global
+
+    //const { project } = useContext(globalContext); // Obtener el proyecto desde el contexto global
+    const { project, accessToken } = useContext(globalContext);
     console.log("Project en EditCardModal:", project);
+    console.log("Access Token en EditCardModal:", accessToken);
     console.log("Datos de la tarjeta:", card);
 
     const [editingTitle, setEditingTitle] = useState(false);
@@ -95,23 +98,41 @@ const EditCardModal = ({ card, list, setShowModal , itemId}) => {
     } = useAxiosGet(`/boards/comments/?item=${card.id}`);
 
     
-
     const saveDueDate = async () => {
         if (!dueDate) {
             console.error("La fecha de vencimiento no puede ser nula");
             return;
         }
     
+        const token = localStorage.getItem('access_token');
+        if (!token) {
+            console.error("Token de acceso no encontrado. El usuario no está autenticado.");
+            return;
+        }
+    
         try {
             const formattedDate = new Date(dueDate).toISOString();
     
-            const response = await axios.put(`http://localhost:8000/boards/items/${itemId}/`, {
-                dueDate: formattedDate,
-            });
+            const response = await axios.put(
+                `http://localhost:8000/boards/items/${itemId}/`,
+                { dueDate: formattedDate },
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                        'Content-Type': 'application/json',
+                    },
+                }
+            );
     
             console.log("Fecha de vencimiento guardada con éxito:", response.data);
         } catch (error) {
-            console.error("Error al guardar la fecha límite:", error);
+            if (error.response) {
+                console.error("Error en la respuesta del servidor:", error.response.data);
+            } else if (error.request) {
+                console.error("No se recibió respuesta del servidor:", error.request);
+            } else {
+                console.error("Error al configurar la solicitud:", error.message);
+            }
         }
     };
     

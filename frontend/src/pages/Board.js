@@ -50,6 +50,13 @@ const Board = (props) => {
     const [isBackgroundDark, setIsBackgroundDark] = useState(false);
     useEffect(handleBackgroundBrightness(board, setIsBackgroundDark), [board]);
 
+    // Estado para el menú de filtros
+    const [showFilters, setShowFilters] = useState(false);
+
+    const toggleFilters = () => {
+        setShowFilters(!showFilters);
+    };
+
 
 
 
@@ -72,6 +79,24 @@ const Board = (props) => {
                     setBoard={setBoard}
                 />
             )}
+            <button
+                    className="btn board__filter-btn"
+                    onClick={toggleFilters}
+                    style={isBackgroundDark ? { color: "white" } : null}
+                >
+                    <i className="fas fa-filter"></i>
+                </button>
+                {showFilters && (
+                    <div className="board__filter-menu">
+                        {/* Opciones de filtro */}
+                        <p onClick={() => console.log("Filtrar por etiqueta")}>
+                            Filtrar por etiqueta
+                        </p>
+                        <p onClick={() => console.log("Filtrar por vencidas")}>
+                            Filtrar por vencidas
+                        </p>
+                    </div>
+                )}
             <p className="board__subtitle">{board.owner.title}</p>
 
             {/* Enlace al Dashboard */}
@@ -175,9 +200,9 @@ const CreateList = ({ board, setBoard, setAddingList }) => {
             <button
                 type="submit"
                 className="btn btn--small"
-                disabled={!title.trim() || !maxWip}
+                disabled={!title.trim() || !maxWip || maxWip <= 0}
             >
-                Add List
+                Agregar Lista
             </button>
         </form>
     );

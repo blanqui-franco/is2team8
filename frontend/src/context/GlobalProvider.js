@@ -76,6 +76,7 @@ const GlobalProvider = (props) => {
                 setBoard: globalState.setBoard,
                 project: globalState.project, // Proyecto actual
                 setProject, // Setter para el proyecto
+                accessToken: globalState.accessToken, // Exponer el accessToken
                 checkAuth,
                 login,
                 logout,

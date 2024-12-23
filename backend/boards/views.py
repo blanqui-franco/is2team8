@@ -185,6 +185,7 @@ class ListShow(generics.ListCreateAPIView):
 
     def perform_create(self, serializer):
         board = self.get_board(self.request.data['board'])
+        serializer.is_valid(raise_exception=True)
         serializer.save(board=board)
 
 
@@ -201,9 +202,6 @@ class ListDetail(generics.RetrieveUpdateDestroyAPIView):
 
     def delete(self, request, *args, **kwargs):
         list_obj = self.get_object()
-
-        # Realizar cualquier verificación adicional si es necesario
-        # Como revisar que no tenga tarjetas activas o cualquier otra condición de negocio
 
         # Eliminar la lista
         list_obj.delete()
@@ -232,14 +230,24 @@ class ItemList(generics.ListCreateAPIView):
         return queryset
 
     def post(self, request, *args, **kwargs):
-        # Verificar que la lista esté incluida en los datos de solicitud
+    # Verificar que la lista esté incluida en los datos de solicitud
         list_id = request.data.get('list')
         if not list_id:
             return Response({"error": "El campo 'list' es obligatorio."}, status=status.HTTP_400_BAD_REQUEST)
 
         # Validar que la lista pertenece al usuario
         self.get_list(list_id)
+
+        # Validar 'max_wip' en los datos de solicitud
+        max_wip = request.data.get('max_wip')
+        if max_wip is None:
+            return Response({"error": "El campo 'max_wip' es obligatorio."}, status=status.HTTP_400_BAD_REQUEST)
+        if not isinstance(max_wip, int) or max_wip <= 0:
+            return Response({"error": "El campo 'max_wip' debe ser un número entero mayor que 0."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Proceder con la creación si todas las validaciones son exitosas
         return super().post(request, *args, **kwargs)
+
 
     def perform_create(self, serializer):
         list_instance = self.get_list(self.request.data['list'])
@@ -249,6 +257,7 @@ class ItemDetail(generics.RetrieveUpdateDestroyAPIView):
 
     serializer_class = ItemSerializer
     permission_classes = [CanViewBoard]
+    permission_classes = [permissions.IsAuthenticated]  
 
     def get_user(self, pk, board):
         print(f"Verificando usuario: {pk} para tablero: {board.id}")
@@ -273,9 +282,10 @@ class ItemDetail(generics.RetrieveUpdateDestroyAPIView):
             return list
         return None
 
-    def get_object(self):
+    def get_object(self,request):
         pk = self.kwargs.get('pk')
         item = get_object_or_404(Item, pk=pk)
+        print(f"Usuario autenticado: {request.user}, autenticado: {request.user.is_authenticated}")
         self.check_object_permissions(self.request, item.list.board)
         return item
 

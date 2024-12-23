@@ -29,9 +29,10 @@ const List = ({ list, index }) => {
 
    
      // Asigna el límite de WIP con un valor predeterminado de 5 si no está definido
-     const maxWIP = list.maxWIP ; 
+     const maxWIP = list.maxWIP || 5;
      const totalCards = list.items.length;
      const isOverWIP = totalCards >= maxWIP;
+     console.log("isOverWIP:", isOverWIP, "totalCards:", totalCards, "maxWIP:", maxWIP);
     
    
 
@@ -42,17 +43,18 @@ const List = ({ list, index }) => {
     const onAddCard = async (e) => {
         e.preventDefault();
         if (cardTitle.trim() === "") return;
-
+    
         // Verificación en el frontend del límite WIP antes de enviar la solicitud
         if (isOverWIP) {
             alert("ALERTA WIP: Límite de tareas alcanzado en esta lista.");
             return;
         }
-
+    
         try {
             const { data } = await authAxios.post(`${backendUrl}/boards/items/`, {
                 list: list.id,
                 title: cardTitle,
+                max_wip: maxWIP, // Incluye este campo en la solicitud
             });
             setAddingCard(false);
             setCardTitle("");
@@ -62,6 +64,7 @@ const List = ({ list, index }) => {
             alert("Hubo un problema al agregar la tarjeta.");
         }
     };
+    
 
     const handleDeleteList = async (listId) => {
         

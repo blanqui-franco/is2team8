@@ -14,7 +14,7 @@ from django.utils import timezone
 class LabelSerializer(serializers.ModelSerializer):
     class Meta:
         model = Label
-        fields = ['id', 'name', 'board']  # Incluye los campos necesarios aquí.
+        fields = [ 'board']  # Incluye los campos necesarios aquí.
 
 
 class CommentSerializer(serializers.ModelSerializer):
@@ -88,14 +88,17 @@ class ItemSerializer(serializers.ModelSerializer):
 
 class ListSerializer(serializers.ModelSerializer):
     items = serializers.SerializerMethodField()
-
+    max_wip = serializers.IntegerField(required=True)   
     class Meta:
         model = List
+        #fields = ['id', 'title', 'max_wip', 'items']
+        #exclude = ['board']
         fields = ['id', 'title', 'max_wip', 'items']
 
     def get_items(self, obj):
         queryset = Item.objects.filter(list=obj).order_by('order')
         return ItemSerializer(queryset, many=True).data
+    
     
     def validate_max_wip(self, value):
         if value is None:

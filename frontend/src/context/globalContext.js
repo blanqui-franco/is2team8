@@ -9,4 +9,5 @@ export default React.createContext({
     setBoard: null, // The setter returned by useAxioGet in Board.js
     project: null, // Nuevo: El proyecto actual
     setProject: null, // Nuevo: Setter para actualizar el proyecto
+    accessToken: localStorage.getItem("accessToken") || null, 
 });
