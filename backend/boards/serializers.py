@@ -53,37 +53,21 @@ class ChecklistTaskSerializer(serializers.ModelSerializer):
 class ItemSerializer(serializers.ModelSerializer):
     labels = LabelSerializer(many=True, required=False)
     attachments = AttachmentSerializer(many=True, required=False)
-    #assigned_to = serializers.PrimaryKeyRelatedField(many=True, queryset=User.objects.all())
-    
-    #assigned_to = serializers.SerializerMethodField()
     assigned_to = serializers.PrimaryKeyRelatedField(
         queryset=User.objects.all(), required=False, allow_null=True
     )
-    tasks = ChecklistTaskSerializer(many=True, required=False)
-    def get_assigned_to(self, obj):
-        queryset = obj.assigned_to.all()
-        return UserSerializer(queryset, many=True).data
 
     class Meta:
         model = Item
         fields = '__all__'
-        #exclude = ['list']
-    
-    def validate_assigned_to(self, value):
-        print(f"Validando usuario asignado: {value}")
-        if not value:
-            return None 
-        if self.instance:  # Al actualizar
-            board = self.instance.list.board
-        elif self.initial_data.get('list'):  # Al crear
-            list_instance = List.objects.get(pk=self.initial_data['list'])
-            board = list_instance.board
-        #board = self.instance.list.board if self.instance else self.initial_data.get('list').board
-        if board and board.owner_model.model == "project":
-            project = board.owner
-            if not project.members.filter(id=value.id).exists():
-                raise serializers.ValidationError(f"El usuario {value} no pertenece al proyecto {project}.")
-        return value
+
+    def validate_description(self, value):
+        return value or ""  # Devuelve una cadena vacía si no se proporciona
+
+    def validate(self, data):
+        if not data.get('title'):
+            data['title'] = "Sin título"  # Valor predeterminado para título
+        return data
 
 
 class ListSerializer(serializers.ModelSerializer):

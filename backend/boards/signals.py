@@ -19,12 +19,16 @@ def create_board_labels(sender, instance, created, **kwargs):
 @receiver(post_save, sender=models.Comment)
 def create_comment_notification(sender, instance, created, **kwargs):
     if created:
-        for user in instance.item.assigned_to.all():
-            if instance.author == user:  # Don't create notification if you comment
-                continue
+        assigned_user = instance.item.assigned_to
+        if assigned_user and instance.author != assigned_user:  # Evita notificaciones para el autor
             models.Notification.objects.create(
-                actor=instance.author, recipient=user,
-                verb='commented', action_object=instance, target=instance.item)
+                actor=instance.author,
+                recipient=assigned_user,
+                verb='commented',
+                action_object=instance,
+                target=instance.item
+            )
+        
 
 
 @receiver(post_delete, sender=models.Comment)

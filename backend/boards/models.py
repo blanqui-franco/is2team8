@@ -21,6 +21,8 @@ class Board(models.Model):
     image_url = models.URLField(blank=True, null=False)
     color = models.CharField(blank=True, null=False, max_length=6)  # Hex Code
     created_at = models.DateTimeField(default=timezone.now)
+    members = models.ManyToManyField(settings.AUTH_USER_MODEL, related_name="boards", blank=True)
+
 
     def __str__(self):
         return self.title
@@ -54,52 +56,79 @@ class Label(models.Model):
         return self.title
 
 
-class Item(models.Model):
-    list = models.ForeignKey(List, on_delete=models.CASCADE, related_name='items')
-    title = models.CharField(max_length=255, blank=False, null=False)
-    description = models.TextField(blank=True, null=False)
-    image = models.ImageField(blank=True, upload_to='item_images')
-    image_url = models.URLField(blank=True, null=False)
-    color = models.CharField(blank=True, null=False, max_length=6)  # Hex Code
-    order = models.DecimalField(max_digits=30, decimal_places=15, blank=True, null=True)
-    labels = models.ManyToManyField(Label, blank=True)
-    #assigned_to = models.ForeignKey(
-     #   settings.AUTH_USER_MODEL,
-      #  on_delete=models.SET_NULL,
-       # null=True,
-        #blank=True,
-        #related_name="assigned_items"
-    #)
-    assigned_to = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL)
-    #assigned_to = models.ManyToManyField(settings.AUTH_USER_MODEL, blank=True)
-    due_date = models.DateTimeField(blank=True, null=True)
-    created_at = models.DateTimeField(default=timezone.now)
-    def clean(self):
-        # Asegúrate de que el usuario asignado pertenece al proyecto relacionado
-        # Validar que el usuario asignado pertenezca al proyecto relacionado
-        if self.assigned_to:
-            board = self.list.board
-            if board.owner_model.model == "project":
-                project = board.owner
-                if not project.members.filter(id=self.assigned_to.id).exists():
-                    raise ValidationError(f"El usuario {self.assigned_to} no pertenece al proyecto {project}.")
+# class Item(models.Model):
+#     list = models.ForeignKey(List, on_delete=models.CASCADE, related_name='items')
+#     title = models.CharField(max_length=255, blank=False, null=True)
+#     description = models.TextField(blank=True, null=False)
+#     image = models.ImageField(blank=True, upload_to='item_images')
+#     image_url = models.URLField(blank=True, null=False)
+#     color = models.CharField(blank=True, null=False, max_length=6)  # Hex Code
+#     order = models.DecimalField(max_digits=30, decimal_places=15, blank=True, null=True)
+#     labels = models.ManyToManyField(Label, blank=True)
+#     #assigned_to = models.ForeignKey(
+#      #   settings.AUTH_USER_MODEL,
+#       #  on_delete=models.SET_NULL,
+#        # null=True,
+#         #blank=True,
+#         #related_name="assigned_items"
+#     #)
+#     assigned_to = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL)
+#     #assigned_to = models.ManyToManyField(settings.AUTH_USER_MODEL, blank=True)
+#     due_date = models.DateTimeField(blank=True, null=True)
+#     created_at = models.DateTimeField(default=timezone.now)
+#     def clean(self):
+#         # Asegúrate de que el usuario asignado pertenece al proyecto relacionado
+#         # Validar que el usuario asignado pertenezca al proyecto relacionado
+#         if self.assigned_to:
+#             board = self.list.board
+#             if board.owner_model.model == "project":
+#                 project = board.owner
+#                 if not project.members.filter(id=self.assigned_to.id).exists():
+#                     raise ValidationError(f"El usuario {self.assigned_to} no pertenece al proyecto {project}.")
        
 
-    def __str__(self):
-        return self.title
+#     def __str__(self):
+#         return self.title
 
+#     def save(self, *args, **kwargs):
+#         # Verificar el límite de WIP antes de guardar el ítem
+#         self.clean()
+#         if self.list.items.count() >= self.list.max_wip:
+#             raise ValueError(f"Cannot add more items. WIP limit of {self.list.max_wip} reached.")
+#         filtered_objects = Item.objects.filter(list=self.list)
+#         if not self.order and filtered_objects.count() == 0:
+#             self.order = 2 ** 16 - 1 
+#         elif not self.order:
+#             self.order = filtered_objects.aggregate(Max('order'))['order__max'] + 2 ** 16 - 1
+#         super().save(*args, **kwargs)
+
+class Item(models.Model):
+    title = models.CharField(max_length=255, blank=True, null=True)  # Permitir valores nulos y en blanco
+    description = models.TextField(blank=True, null=True)  # Opcional
+    assigned_to = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="assigned_items"
+    )  # Opcional
+    list = models.ForeignKey(List, on_delete=models.CASCADE,  related_name='items')  # Obligatorio
+    order = models.DecimalField(max_digits=30, decimal_places=15, blank=True, null=True)  # Opcional
+    color = models.CharField(max_length=6, blank=True, null=True)  # Opcional
+    image = models.ImageField(blank=True, null=True, upload_to='item_images')  # Opcional
+    image_url = models.URLField(blank=True, null=True)  # Opcional
+    due_date = models.DateTimeField(blank=True, null=True)  # Opcional
+    created_at = models.DateTimeField(auto_now_add=True)
     def save(self, *args, **kwargs):
-        # Verificar el límite de WIP antes de guardar el ítem
-        self.clean()
-        if self.list.items.count() >= self.list.max_wip:
-            raise ValueError(f"Cannot add more items. WIP limit of {self.list.max_wip} reached.")
-        filtered_objects = Item.objects.filter(list=self.list)
-        if not self.order and filtered_objects.count() == 0:
-            self.order = 2 ** 16 - 1 
-        elif not self.order:
-            self.order = filtered_objects.aggregate(Max('order'))['order__max'] + 2 ** 16 - 1
+        # Orden inicial si no se especifica
+        if not self.order:
+            max_order = self.list.items.aggregate(max_order=models.Max('order'))['max_order'] or 0
+
+            self.order = max_order + 1
         super().save(*args, **kwargs)
 
+    def __str__(self):
+        return self.title or "Sin título"
 
 class Comment(models.Model):
     author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='comments')

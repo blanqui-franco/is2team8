@@ -167,23 +167,19 @@ const Card = ({ card, list, provided, isDragging }) => {
     );
 };
 
-/*const Members = ({ members }) => (
-    <div className="card__members">
-        <div className="member member--add">
-            <i className="fal fa-plus"></i>
+const Members = ({ members = [] }) => { 
+    if (!Array.isArray(members)) {
+        console.error("Members no es un arreglo en card.js:", members);
+        members = members ? [members] : []; // Asegura un arreglo vacío si `members` es null
+    }
+    return (
+        <div className="card__members">
+            {members.map((member) => (
+                <ProfilePic user={member} key={member.id} />
+            ))}
         </div>
-        {members.map((member) => (
-            <ProfilePic user={member} key={uuidv4()} />
-        ))}
-    </div>
-);*/
-const Members = ({ members = [] }) => (
-    <div className="card__members">
-        {members.map((member) => (
-            <ProfilePic user={member} key={member.id} />
-        ))}
-    </div>
-);
+    );
+};
 
 
 export const getEditControlsSidePosition = (cardElem, offset = 0) => {

@@ -252,12 +252,23 @@ class ItemDetail(generics.RetrieveUpdateDestroyAPIView):
 
     def get_user(self, pk, board):
         print(f"Verificando usuario: {pk} para tablero: {board.id}")
-        user = get_object_or_404(User, pk=pk)
-        print("Usuario:",user)
-        if user.can_view_board(board):
-            print("pk:",pk)
-            return user
-        return None
+           # Buscar el ProjectMembership con el ID proporcionado
+        membership = get_object_or_404(ProjectMembership, pk=pk)
+        # Acceder al usuario relacionado
+        user = membership.member # Asegúrate de que `user` sea la relación al modelo `User`
+        #user = get_object_or_404(ProjectMembership, pk=pk)
+        #if user.can_view_board(board):
+        print("Usuario en geet:",user)
+        return user
+         #   print("puede ver pk:",pk)
+         #   return user
+        #else:
+        #    return None
+      
+        #if user.can_view_board(board):
+         #   print("puede ver pk:",pk)
+         #   return user
+       # return None
         
 
     def get_label(self, pk, board):
@@ -282,9 +293,11 @@ class ItemDetail(generics.RetrieveUpdateDestroyAPIView):
     def put(self, request, *args, **kwargs):
         item = self.get_object()
         if "assigned_to" in request.data:
-            print("Usuario asignado:", request.data["assigned_to"])
+            print("Usuario asignado es:", request.data["assigned_to"])
             #user = self.get_user(request.data["assigned_to"], item.list.board)
-            user = self.get_user(request.data["assigned_to"], item.list.board)
+            user= request.data["assigned_to"]
+           # user = self.get_user(request.data["assigned_to"], item.list.board)
+            print("variable user", user)
             if user is None:
                 return Response({"assigned_to": ["El usuario no puede ver el tablero"]}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -317,11 +330,16 @@ class ItemDetail(generics.RetrieveUpdateDestroyAPIView):
         # Assigning or removing someone?
         if "assigned_to" in req_data:
             user = self.get_user(req_data["assigned_to"], item.list.board)
-
-            if item.assigned_to.filter(pk=user.pk).exists():
-                item.assigned_to.remove(user)
+            print("Objeto devuelto por get_user:", user, type(user))
+            if not isinstance(user, User):
+                return Response({"assigned_to": ["Formato inválido para el usuario."]}, status=status.HTTP_400_BAD_REQUEST)
+            if item.assigned_to == user:
+                item.assigned_to = None  # Remueve el usuario asignado
             else:
-                item.assigned_to.add(user)
+
+                item.assigned_to = user# Asigna el nuevo usuario
+                print("Usuario asignado user.member iteemhhh:", user)
+            item.save()
 
         # Adding or removing a label?
         if "labels" in req_data:

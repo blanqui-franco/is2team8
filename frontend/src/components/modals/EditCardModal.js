@@ -28,12 +28,15 @@ const EditCardModal = ({ card, list, setShowModal , itemId}) => {
     const [showTaskForm, setShowTaskForm] = useState(false);
 
 
-    const [assignedMember, setAssignedMember] = useState(card.assigned_to || null);
+    const [assignedMember, setAssignedMember] = useState( card.assigned_to ? [card.assigned_to] : []);
     const [isAssigning, setIsAssigning] = useState(false);
     const [projectMembers, setProjectMembers] = useState([]);
     const [loadingMembers, setLoadingMembers] = useState(true); // Para manejar la carga de datos
     // Cargar miembros del proyecto cuando el proyecto esté disponible
+
+    console.log("Datos de card.assigned_to pppppp:", card.assigned_to);
     useEffect(() => {
+        console.log("HOLAAAAA", project); 
         console.log("projectoid:", project); 
         if (project?.id) {
             fetchProjectMembers();
@@ -44,6 +47,7 @@ const EditCardModal = ({ card, list, setShowModal , itemId}) => {
     const fetchProjectMembers = async () => {
         try {
             const { data } = await authAxios.get(`${backendUrl}/projects/${project.id}/members/`);
+            console.log("Miembros del proyecto cargados:", data);
             setProjectMembers(data);
         } catch (error) {
             console.error("Error al obtener los miembros del proyecto:", error);
@@ -51,27 +55,60 @@ const EditCardModal = ({ card, list, setShowModal , itemId}) => {
             setLoadingMembers(false);
         }
     };
-    
+    console.log("assignedMember en Members:", assignedMember);
+    console.log("Datos de card.assigned_tossss:", card.assigned_to);
      // Asignar un miembro a la tarjeta
     const handleAssignMember = async (member) => {
+       
+
+        if (!member || !member.full_name) {
+            console.warn("El miembro seleccionado tiene datos incompletoss:", member);
+        }
         try {
             console.log("Asignando miembro:", member); 
             const response = await authAxios.put(
                 `${backendUrl}/boards/items/${card.id}/`,
-                { assigned_to: member ? member.id : null },
                 {
-                    headers: {
-                        Authorization: `Bearer ${localStorage.getItem('accessToken')}`, // Incluye el token
-                    },
+                    assigned_to: member.id,
+                    title: card.title || "Sin título", // Campo requerido
+                    list: list.id,     // Campo requerido
                 }
             );
+            console.log("Respuesta del backend:", response.data);
+            console.log("assignedMember en Members aaaaa:", assignedMember)
             setAssignedMember(member); // Actualiza el estado local
+            updateCard(board, setBoard)(list.id, response.data);
             console.log("Asignación exitosa:", response.data);
             console.log("Encabezados de la solicitud:", authAxios.defaults.headers);
 
         } catch (error) {
             console.log("Encabezados de la solicitud:", authAxios.defaults.headers);
             console.error("Error al asignar el miembro:",error.response || error);
+        }
+    };
+    useEffect(() => {
+        if (typeof card.assigned_to === "number") {
+            fetchAssignedMember(card.assigned_to);
+            console.log("Datos de card.assigned_to:", card.assigned_to);
+        }
+    }, [card.assigned_to]);
+
+    const fetchAssignedMember = async (userId) => {
+        try {
+            const response = await authAxios.get(`${backendUrl}/projects/${project.id}/members/`);
+            console.log("Datos del usuario asignado cargados:", response.data);
+
+            // Busca el miembro que coincide con el `userId`
+            const assignedUser = response.data.find(member => member.id === userId);
+            if (assignedUser) {
+                console.log("Usuario asignado encontrado:", assignedUser);
+                setAssignedMember(assignedUser); // Actualiza con los datos completos del usuario asignado
+            } else {
+                console.warn("Usuario asignado no encontrado en los miembros del proyecto.");
+            }
+            //setAssignedMember(response.data); // Actualiza `assignedMember` con los datos completos del usuario
+        } catch (error) {
+            console.error("Error al obtener los datos del usuario asignado:", error);
         }
     };
     useEffect(() => {
@@ -104,16 +141,21 @@ const EditCardModal = ({ card, list, setShowModal , itemId}) => {
     
         try {
             const formattedDate = new Date(dueDate).toISOString();
-    
-            const response = await axios.put(`http://localhost:8000/boards/items/${itemId}/`, {
-                dueDate: formattedDate,
-            });
-    
+            const response = await authAxios.put(
+                `${backendUrl}/boards/items/${card.id}/`,
+                {
+                    title: card.title,  // Campo requerido
+                    list: list.id,      // Campo requerido
+                    due_date: formattedDate, // Asegúrate de usar el nombre correcto en el backend
+                }
+            );
+            updateCard(board, setBoard)(list.id, response.data);
             console.log("Fecha de vencimiento guardada con éxito:", response.data);
         } catch (error) {
             console.error("Error al guardar la fecha límite:", error);
         }
     };
+
     
 
     const saveTasks = async (updatedTasks) => {
@@ -133,24 +175,33 @@ const EditCardModal = ({ card, list, setShowModal , itemId}) => {
     const addTask = async (e) => {
         e.preventDefault();
         if (!newTaskDescription.trim()) return;
-
+    
         const newTask = {
             id: uuidv4(),
-            description: newTaskDescription,
-            status: 'open',
-            dueDate: newTaskDueDate,
+            description: newTaskDescription.trim(),
+            completed: false,
+            due_date: newTaskDueDate || null, // Permite `null` si no hay fecha
+            card: card.id                    // Asocia la tarea a la tarjeta
         };
-
+    
         const updatedTasks = [...tasks, newTask];
         setTasks(updatedTasks);
-        await saveTasks(updatedTasks);
-
-        // Limpia los campos del formulario
-        setNewTaskDescription("");
-        setNewTaskDueDate("");
-        setShowTaskForm(false);
+    
+        try {
+            const { data } = await authAxios.put(
+                `${backendUrl}/boards/items/${card.id}/`,
+                { tasks: updatedTasks }
+            );
+            updateCard(board, setBoard)(list.id, data);
+        } catch (error) {
+            console.error("Error al guardar tareas:", error.response || error);
+        } finally {
+            setNewTaskDescription("");
+            setNewTaskDueDate("");
+            setShowTaskForm(false);
+        }
     };
-
+    
     const removeTask = async (taskId) => {
         const updatedTasks = tasks.filter(task => task.id !== taskId);
         setTasks(updatedTasks);
@@ -177,7 +228,7 @@ const EditCardModal = ({ card, list, setShowModal , itemId}) => {
             </button>
             <div className="edit-modal__cols">
                 <div className="edit-modal__left">
-                    <Labels labels={card.labels} />
+                    <Labels labels={card.labels || []} />
                     {!editingTitle ? (
                         <p onClick={() => setEditingTitle(true)} className="edit-modal__title">
                             {card.title}
@@ -363,7 +414,12 @@ const EditCardModal = ({ card, list, setShowModal , itemId}) => {
             const selectedMember = projectMembers.find(
                 (member) => member.id === parseInt(e.target.value, 10)
             );
-            handleAssignMember(selectedMember || null);
+            console.log("Miembro seleccionado del dropdown:", selectedMember);
+            if (!selectedMember) {
+                console.error("No se encontró el miembro seleccionado.");
+                return;
+            }
+            handleAssignMember(selectedMember);
         }}
     >
         <option value="">Seleccionar miembro</option>
@@ -379,8 +435,10 @@ const EditCardModal = ({ card, list, setShowModal , itemId}) => {
             </div>
             )}
             {assignedMember && (
+            
                 <div className="edit-modal__assigned-member">
                     <p>
+                        
                         Miembro asignado: {assignedMember.full_name} (
                         {assignedMember.username})
                     </p>
@@ -442,22 +500,37 @@ const EditCardTitle = ({ list, card, setEditingTitle }) => {
 const EditCardDescription = ({ list, card, setEditingDescription }) => {
     const { board, setBoard } = useContext(globalContext);
     const [description, setDescription] = useState(card.description);
+    const [isSaving, setIsSaving] = useState(false); // Estado de carga
 
     const onEditDesc = async (e) => {
         e.preventDefault();
         if (description.trim() === "") return;
-        const { data } = await authAxios.put(
-            `${backendUrl}/boards/items/${card.id}/`,
-            {
-                title: card.title,
-                description,
-            }
-        );
-        updateCard(board, setBoard)(list.id, data);
+    
+        try {
+            const payload = {
+                title: card.title || "Sin título",  // Valor predeterminado
+                description: description || "",    // Cadena vacía si no hay descripción
+                list: list.id                      // Relación obligatoria
+            };
+    
+            console.log("Enviando payload:", payload);
+    
+            const { data } = await authAxios.put(
+                `${backendUrl}/boards/items/${card.id}/`,
+                payload
+            );
+    
+            updateCard(board, setBoard)(list.id, data);
+            setEditingDescription(false);
+        } catch (error) {
+            console.error("Error al actualizar descripción:", error.response || error);
+            alert("Error al guardar la descripción. Verifica los datos.");
+        }
+
     };
 
     const onCancelEdit = () => {
-        setEditingDescription(false); // Cierra el modo de edición sin guardar cambios
+        setEditingDescription(false);
     };
 
     return (
@@ -465,15 +538,17 @@ const EditCardDescription = ({ list, card, setEditingDescription }) => {
             <textarea
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
+                disabled={isSaving} // Deshabilitar mientras guarda
             />
             <div className="edit-modal__form-actions">
-                <button className="btn btn--small" type="submit">
-                    Guardar
+                <button className="btn btn--small" type="submit" disabled={isSaving}>
+                    {isSaving ? "Guardando..." : "Guardar"}
                 </button>
                 <button
                     className="btn btn--secondary btn--small"
                     type="button"
                     onClick={onCancelEdit}
+                    disabled={isSaving}
                 >
                     Cancelar
                 </button>
@@ -481,6 +556,7 @@ const EditCardDescription = ({ list, card, setEditingDescription }) => {
         </form>
     );
 };
+
 
 const Comments = ({ card, comments, replaceComment, removeComment }) => {
     const { authUser } = useContext(globalContext);
@@ -603,10 +679,17 @@ const CommentForm = ({
 };
 
 const Members = ({members = [] }) => {
+    if (!Array.isArray(members)) {
+        console.error("Members no es un arreglo:", members);
+        members = [members];
+    }
     return (
         <div className="edit-modal__members">
             {members.map((member) => (
-                <ProfilePic key={member.id} member={member} />
+                //<ProfilePic key={member.id} member={member} />
+                <div key={member.id} className="member">
+                    <p>{member.full_name}</p>
+                </div>
             ))}
         </div>
     );
