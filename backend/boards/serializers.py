@@ -51,6 +51,7 @@ class ChecklistTaskSerializer(serializers.ModelSerializer):
 
 
 class ItemSerializer(serializers.ModelSerializer):
+    
     labels = LabelSerializer(many=True, required=False)
     attachments = AttachmentSerializer(many=True, required=False)
     assigned_to = serializers.PrimaryKeyRelatedField(
