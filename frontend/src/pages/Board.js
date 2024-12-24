@@ -50,6 +50,7 @@ const Board = (props) => {
     const [isBackgroundDark, setIsBackgroundDark] = useState(false);
     useEffect(handleBackgroundBrightness(board, setIsBackgroundDark), [board]);
 
+    
     // Estado para el menú de filtros
     const [showFilters, setShowFilters] = useState(false);
 
