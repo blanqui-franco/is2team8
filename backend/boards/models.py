@@ -5,6 +5,7 @@ from django.db.models import Max
 from django.utils import timezone
 from django.conf import settings
 from django.core.exceptions import ValidationError
+from django.core.validators import MinValueValidator
 
 class Board(models.Model):
     owner_model = models.ForeignKey(
@@ -33,7 +34,10 @@ class List(models.Model):
     title = models.CharField(max_length=255, blank=False, null=False)
     order = models.DecimalField(max_digits=30, decimal_places=15, blank=True, null=True)
     created_at = models.DateTimeField(default=timezone.now)
-    max_wip = models.IntegerField(default=5)  # Nuevo campo para el límite de WIP
+    max_wip = models.PositiveIntegerField(
+       # default=5,
+        validators=[MinValueValidator(1)]  # Garantiza que sea mayor o igual a 1
+    )
 
     def __str__(self):
         return self.title

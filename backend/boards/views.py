@@ -232,14 +232,24 @@ class ItemList(generics.ListCreateAPIView):
         return queryset
 
     def post(self, request, *args, **kwargs):
-        # Verificar que la lista esté incluida en los datos de solicitud
+    # Verificar que la lista esté incluida en los datos de solicitud
         list_id = request.data.get('list')
         if not list_id:
             return Response({"error": "El campo 'list' es obligatorio."}, status=status.HTTP_400_BAD_REQUEST)
 
         # Validar que la lista pertenece al usuario
         self.get_list(list_id)
+
+        # Validar 'max_wip' en los datos de solicitud
+        max_wip = request.data.get('max_wip')
+        if max_wip is None:
+            return Response({"error": "El campo 'max_wip' es obligatorio."}, status=status.HTTP_400_BAD_REQUEST)
+        if not isinstance(max_wip, int) or max_wip <= 0:
+            return Response({"error": "El campo 'max_wip' debe ser un número entero mayor que 0."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Proceder con la creación si todas las validaciones son exitosas
         return super().post(request, *args, **kwargs)
+
 
     def perform_create(self, serializer):
         list_instance = self.get_list(self.request.data['list'])
