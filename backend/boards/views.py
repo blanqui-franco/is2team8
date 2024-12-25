@@ -20,6 +20,9 @@ from .serializers import (AttachmentSerializer, BoardSerializer,
                           ListSerializer, NotificationSerializer,
                           ShortBoardSerializer,ChecklistTaskSerializer)
 from boards.models import RecentlyViewedBoard
+from django.http import Http404
+from django.db.models import Count
+
 
 
 
@@ -241,11 +244,11 @@ class ItemList(generics.ListCreateAPIView):
         self.get_list(list_id)
 
         # Validar 'max_wip' en los datos de solicitud
-        max_wip = request.data.get('max_wip')
-        if max_wip is None:
-            return Response({"error": "El campo 'max_wip' es obligatorio."}, status=status.HTTP_400_BAD_REQUEST)
-        if not isinstance(max_wip, int) or max_wip <= 0:
-            return Response({"error": "El campo 'max_wip' debe ser un número entero mayor que 0."}, status=status.HTTP_400_BAD_REQUEST)
+        #max_wip = request.data.get('max_wip')
+        #if max_wip is None:
+        #    return Response({"error": "El campo 'max_wip' es obligatorio."}, status=status.HTTP_400_BAD_REQUEST)
+        #if not isinstance(max_wip, int) or max_wip <= 0:
+        #    return Response({"error": "El campo 'max_wip' debe ser un número entero mayor que 0."}, status=status.HTTP_400_BAD_REQUEST)
 
         # Proceder con la creación si todas las validaciones son exitosas
         return super().post(request, *args, **kwargs)

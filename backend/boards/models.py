@@ -35,7 +35,7 @@ class List(models.Model):
     order = models.DecimalField(max_digits=30, decimal_places=15, blank=True, null=True)
     created_at = models.DateTimeField(default=timezone.now)
     max_wip = models.PositiveIntegerField(
-       # default=5,
+        default=5,
         validators=[MinValueValidator(1)]  # Garantiza que sea mayor o igual a 1
     )
 

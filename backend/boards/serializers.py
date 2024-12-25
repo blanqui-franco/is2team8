@@ -73,7 +73,7 @@ class ItemSerializer(serializers.ModelSerializer):
 
 class ListSerializer(serializers.ModelSerializer):
     items = serializers.SerializerMethodField()
-
+    max_wip = serializers.IntegerField(required=True)  
     class Meta:
         model = List
         fields = ['id', 'title', 'max_wip', 'items']

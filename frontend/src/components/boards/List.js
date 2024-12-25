@@ -29,7 +29,8 @@ const List = ({ list, index }) => {
 
    
      // Asigna el límite de WIP con un valor predeterminado de 5 si no está definido
-     const maxWIP = list.maxWIP || 5; 
+     const maxWIP = list.max_wip || 5;
+      
      const totalCards = list.items.length;
      const isOverWIP = totalCards >= maxWIP;
     
@@ -43,11 +44,8 @@ const List = ({ list, index }) => {
         e.preventDefault();
         if (cardTitle.trim() === "") return;
 
-        // Verificación en el frontend del límite WIP antes de enviar la solicitud
-        if (isOverWIP) {
-            alert("ALERTA WIP: Límite de tareas alcanzado en esta lista.");
-            return;
-        }
+        console.log("Lista seleccionada:", list); 
+        
 
         try {
             const { data } = await authAxios.post(`${backendUrl}/boards/items/`, {
