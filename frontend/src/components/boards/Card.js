@@ -48,11 +48,11 @@ const Card = ({ card, list, provided, isDragging }) => {
     };
 
     // Formatear la fecha de vencimiento
-    const formatDate = (isoDate) => {
-        if (!isoDate) return "Sin definir";
-        const [year, month, day] = isoDate.split("T")[0].split("-");
-        return `${day}/${month}/${year}`;
-    };
+    //const formatDate = (isoDate) => {
+    //    if (!isoDate) return "Sin definir";
+    //    const [year, month, day] = isoDate.split("T")[0].split("-");
+    //    return `${day}/${month}/${year}`;
+    //};
 
     const handleCardClick = (e) => {
         if (isEditing) return;
@@ -144,9 +144,7 @@ const Card = ({ card, list, provided, isDragging }) => {
                         </p>
                     )}
 
-                    <p className="card__subtitle">
-                        Fecha de Vencimiento: {formatDate(card.dueDate)}
-                    </p>
+                    
                     {card.attachments?.length !== 0 && (
                         <p className="card__subtitle">
                             <i className="fal fa-paperclip"></i>{" "}
