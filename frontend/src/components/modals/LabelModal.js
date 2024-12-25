@@ -1,6 +1,6 @@
 import React, { useRef, useState, useContext } from "react";
 import { v4 as uuidv4 } from "uuid";
-import { getEditControlsSidePosition } from "../boards/Card"; // Asegúrate de que esta función esté exportada desde Card.js
+import { getEditControlsSidePosition } from "../boards/Card";
 import { backendUrl, colors } from "../../static/js/const";
 import useAxiosGet from "../../hooks/useAxiosGet";
 import { authAxios, getAddBoardStyle } from "../../static/js/util";
@@ -13,7 +13,9 @@ const getLiContent = (data, selected) => {
     if (!data) return [];
 
     return data.map((label) => {
-        const checked = selected.find((selectedLabel) => selectedLabel.id === label.id) !== undefined;
+        const checked =
+            selected.find((selectedLabel) => selectedLabel.id === label.id) !==
+            undefined;
         return {
             ...label,
             style: {
@@ -29,19 +31,17 @@ const LabelModal = ({ list, card, cardElem, setShowModal }) => {
     const [showCreateLabel, setShowCreateLabel] = useState(false);
     const labelElem = useRef(null);
     const [label, setLabel] = useState(null);
-    const { data, replaceItem } = useAxiosGet(`/boards/labels/?board=${board.id}`);
+    const { data, replaceItem } = useAxiosGet(
+        `/boards/labels/?board=${board.id}`
+    );
     const liContent = getLiContent(data, card.labels);
 
     const toggleLabel = async (labelId) => {
-        const updatedLabels = card.labels.some((label) => label.id === labelId)
-            ? card.labels.filter((label) => label.id !== labelId) // Eliminar
-            : [...card.labels, { id: labelId }]; // Añadir
-
         const { data } = await authAxios.put(
             `${backendUrl}/boards/items/${card.id}/`,
             {
                 title: card.title,
-                labels: updatedLabels,
+                labels: labelId,
             }
         );
         updateCard(board, setBoard)(list.id, data);
@@ -49,14 +49,14 @@ const LabelModal = ({ list, card, cardElem, setShowModal }) => {
 
     return (
         <>
-            {showCreateLabel && (
+            {showCreateLabel ? (
                 <CreateLabel
                     labelElem={labelElem}
                     setShowCreateLabel={setShowCreateLabel}
                     label={label}
                     replaceItem={replaceItem}
                 />
-            )}
+            ) : null}
             <div
                 style={getEditControlsSidePosition(cardElem.current, 40)}
                 className="label-modal"
@@ -69,38 +69,39 @@ const LabelModal = ({ list, card, cardElem, setShowModal }) => {
                     </button>
                 </div>
                 <div>
-                    <ul className="label-modal__labels-block">
-                        {liContent.map((label) => {
-                            return (
-                                <li key={label.id} className="label-modal__label">
-                                    <p
-                                        onClick={() => toggleLabel(label.id)}
-                                        style={label.style}
-                                    >
-                                        {label.title}
-                                        {label.checked && (
-                                            <i
-                                                className="fal fa-check"
-                                                style={{
-                                                    float: "right",
-                                                    marginRight: "0.6em",
-                                                }}
-                                            ></i>
-                                        )}
-                                    </p>
-                                    <button
-                                        onClick={() => {
-                                            setLabel(label);
-                                            setShowCreateLabel(true);
-                                        }}
-                                        style={{ marginLeft: "1em" }}
-                                    >
-                                        <i className="fal fa-pencil"></i>
-                                    </button>
-                                </li>
-                            );
-                        })}
-                    </ul>
+                <ul className="label-modal__labels-block">
+                        {liContent.map((label) => (
+                            <li key={uuidv4()} className="label-modal__label">
+                                <p
+                                    onClick={() => toggleLabel(label.id)}
+                                    style={{
+                                        ...label.style,
+                                        border: "1px solid #ccc", // Opcional, para mejor visibilidad
+                                    }}
+                                >
+                                    {label.title}
+                                    {label.checked ? (
+                                        <i
+                                            className="fal fa-check"
+                                            style={{
+                                                float: "right",
+                                                marginRight: "0.6em",
+                                            }}
+                                        ></i>
+                                    ) : null}
+                                </p>
+                                <button
+                                    onClick={() => {
+                                        setLabel(label);
+                                        setShowCreateLabel(true);
+                                    }}
+                                    style={{ marginLeft: "1em" }}
+                                >
+                                    <i className="fal fa-pencil"></i>
+                                </button>
+                            </li>
+                        ))}
+                    </ul>                
                 </div>
             </div>
         </>
@@ -108,9 +109,8 @@ const LabelModal = ({ list, card, cardElem, setShowModal }) => {
 };
 
 const CreateLabel = ({ labelElem, setShowCreateLabel, label, replaceItem }) => {
-    const [title, setTitle] = useState(label?.title || ""); // Manejo de estado inicial
-    const [color, setColor] = useState(label?.color || ""); // Manejo de estado inicial
-
+    const [title, setTitle] = useState(label.title);
+    const [color, setColor] = useState(label.color);
     return (
         <div
             style={getEditControlsSidePosition(labelElem.current)}
@@ -143,7 +143,7 @@ const CreateLabel = ({ labelElem, setShowCreateLabel, label, replaceItem }) => {
                     {colors.map((colorOption) => {
                         return (
                             <li
-                                key={colorOption[0]} // Usar color como clave
+                                key={uuidv4()}
                                 className="label-modal__create-label"
                             >
                                 <button
@@ -157,9 +157,9 @@ const CreateLabel = ({ labelElem, setShowCreateLabel, label, replaceItem }) => {
                                     }
                                     style={getAddBoardStyle(...colorOption)}
                                 >
-                                    {color === colorOption[0].substring(1) && (
+                                    {color === colorOption[0].substring(1) ? (
                                         <i className="fal fa-check"></i>
-                                    )}
+                                    ) : null}
                                 </button>
                             </li>
                         );
