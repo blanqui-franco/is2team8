@@ -48,6 +48,9 @@ const List = ({ list, index }) => {
         
 
         try {
+            // Obtener la fecha de creación
+        //const createdAt = new Date().toISOString(); // Fecha actual en formato ISO
+
             const { data } = await authAxios.post(`${backendUrl}/boards/items/`, {
                 list: list.id,
                 title: cardTitle,

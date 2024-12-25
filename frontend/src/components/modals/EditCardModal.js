@@ -43,6 +43,21 @@ const EditCardModal = ({ card, list, setShowModal , itemId}) => {
         }
     }, [project]);
 
+    const formatDate = (isoDate) => {
+        if (!isoDate) return "Sin definir";
+        const [year, month, day] = isoDate.split("T")[0].split("-");
+        return `${day}/${month}/${year}`;
+    };
+
+
+    useEffect(() => {
+        if (card.due_date) {
+            setDueDate(card.due_date);
+        }
+    }, [card.due_date]);
+
+
+
       // Cargar los miembros del proyecto desde el backend
     const fetchProjectMembers = async () => {
         try {
@@ -149,6 +164,7 @@ const EditCardModal = ({ card, list, setShowModal , itemId}) => {
                     due_date: formattedDate, // Asegúrate de usar el nombre correcto en el backend
                 }
             );
+            setDueDate(response.data.due_date); // Actualiza el estado local
             updateCard(board, setBoard)(list.id, response.data);
             console.log("Fecha de vencimiento guardada con éxito:", response.data);
         } catch (error) {
@@ -221,6 +237,11 @@ const EditCardModal = ({ card, list, setShowModal , itemId}) => {
         return dueDate && new Date(dueDate) <= now;
     };
 
+    //const creationDate = formatDate(card.created_at);
+
+   // if (!card) return null; // Asegúrate de que la tarjeta esté definida antes de renderizar
+
+
     return (
         <div className="edit-modal">
             <button className="edit-modal__exit" onClick={() => setShowModal(false)}>
@@ -243,12 +264,18 @@ const EditCardModal = ({ card, list, setShowModal , itemId}) => {
                     <div className="edit-modal__subtitle">
                         in list <span>{list.title}</span>
                     </div>
+                    <div className="edit-modal__section">
+                        <label htmlFor="due-date">Fecha de Vencimiento:</label>
+                        {/* Muestra únicamente la fecha formateada */}
+                        <span>{formatDate(dueDate)}</span>
+                    </div>
 
                     {isOverdue && (
                         <div className="edit-modal__overdue-alert">
                             ⚠️ ALERT: This task is overdue!
                         </div>
                     )}
+                    
 
                     <div className="edit-modal__section-header">
                         <div>
@@ -449,6 +476,7 @@ const EditCardModal = ({ card, list, setShowModal , itemId}) => {
                         Quitar miembro
                     </button>
                 </div>
+                
             )}
         </div>
             <Members members={assignedMember ? [assignedMember] : []} />

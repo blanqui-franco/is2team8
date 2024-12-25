@@ -40,6 +40,20 @@ const Card = ({ card, list, provided, isDragging }) => {
 
     const cardElem = useRef(null);
 
+    const isOverdue = (dueDate) => {
+        if (!dueDate) return false;
+        const now = new Date();
+        const due = new Date(dueDate);
+        return due < now;
+    };
+
+    // Formatear la fecha de vencimiento
+    const formatDate = (isoDate) => {
+        if (!isoDate) return "Sin definir";
+        const [year, month, day] = isoDate.split("T")[0].split("-");
+        return `${day}/${month}/${year}`;
+    };
+
     const handleCardClick = (e) => {
         if (isEditing) return;
         if (e.target.className.includes("pen")) return;
@@ -123,6 +137,16 @@ const Card = ({ card, list, provided, isDragging }) => {
                     ) : (
                         <p className="card__title">{card.title}</p>
                     )}
+                    {/* Muestra la alerta de vencimiento si corresponde */}
+                    {isOverdue(card.dueDate) && (
+                        <p className="overdue-alert" style={{ color: "red", fontWeight: "bold" }}>
+                            ⚠️ ALERT: Esta tarea está vencida.
+                        </p>
+                    )}
+
+                    <p className="card__subtitle">
+                        Fecha de Vencimiento: {formatDate(card.dueDate)}
+                    </p>
                     {card.attachments?.length !== 0 && (
                         <p className="card__subtitle">
                             <i className="fal fa-paperclip"></i>{" "}
