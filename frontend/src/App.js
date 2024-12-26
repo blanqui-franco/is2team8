@@ -36,11 +36,7 @@ function App() {
                     <Route exact path="/b/:id" component={Board} />
                     <Route exact path="/test" component={AddBoardModal} />
                     <Route exact path="/p/:id" component={Project} />
-                    <Route
-                        exact
-                        path="/b/:id/dashboard"
-                        render={(props) => <Dashboard boardId={props.match.params.id} />}
-                    />
+                    <Route path="/b/:boardId/dashboard" component={Dashboard} />
                     <Route path="" component={Error404} />
                 </Switch>
             </>

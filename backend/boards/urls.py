@@ -2,7 +2,7 @@ from django.urls import path, include
 from .views import (BoardDetail, BoardList, BoardStar, 
                     ItemList, ItemDetail, ListShow, ListDetail, 
                     LabelList, LabelDetail, CommentList, CommentDetail, 
-                    AttachmentDetail, AttachmentList, ChecklistTaskList, ChecklistTaskDetail,BoardStatsView)
+                    AttachmentDetail, AttachmentList, ChecklistTaskList, ChecklistTaskDetail,BoardStatsView, )
 
 
 
@@ -22,5 +22,12 @@ urlpatterns = [
     path('attachments/<int:pk>/', AttachmentDetail.as_view()),
     path('cards/<int:card_id>/checklist-tasks/', ChecklistTaskList.as_view(), name='checklist-task-list'),
     path('checklist-tasks/<int:pk>/', ChecklistTaskDetail.as_view(), name='checklist-task-detail'),
-    path('<int:board_id>/stats/', BoardStatsView.as_view(), name='board-stats'),
+    #path('<int:board_id>/stats/', BoardStatsView.as_view(), name='board-stats'),
+    #path('api/boards/statistics/<int:board_id>/', BoardStatsView.as_view(), name='board_statistics'),
+    #('statistics/<int:board_id>/', board_statistics, name='board_statistics'),
+    #path('statistics/<int:board_id>/', BoardStatisticsView.as_view(), name='board_statistics'),
+    path('statistics/<int:board_id>/', BoardStatsView.as_view(), name='board_statistics'),
+    #path('boards/statistics/<int:board_id>/', BoardStatsView.as_view(), name='board_statistics'),
+    
+   
 ]

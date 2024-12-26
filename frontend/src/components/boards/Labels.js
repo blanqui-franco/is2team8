@@ -1,18 +1,17 @@
 import React from "react";
 import { v4 as uuidv4 } from "uuid";
 
-const Labels = ({ labels = [] }) => { // Asignamos un valor predeterminado como arreglo vacío
-    if (!Array.isArray(labels) || labels.length === 0) return null; // Verificamos si es un arreglo y tiene elementos
-
+const Labels = ({ labels }) => {
+    if (labels.length === 0) return null;
     return (
         <div className="labels">
             {labels.map((label) => (
                 <p
-                    className="labels__label"
+                    className={`labels__label`}
                     key={uuidv4()}
-                    style={{ color: `#${label.color}` }} // Usamos el color del label
+                    style={{ color: `#${label.color}` }}
                 >
-                    {label.name || "___"} {/* Muestra el nombre del label o un texto por defecto */}
+                    ___
                 </p>
             ))}
         </div>

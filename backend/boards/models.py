@@ -33,7 +33,7 @@ class List(models.Model):
     board = models.ForeignKey(Board, on_delete=models.CASCADE, related_name="lists")
     title = models.CharField(max_length=255, blank=False, null=False)
     order = models.DecimalField(max_digits=30, decimal_places=15, blank=True, null=True)
-    created_at = models.DateTimeField(default=timezone.now)
+    created_at = models.DateTimeField(default=timezone.now) 
     max_wip = models.PositiveIntegerField(
         default=5,
         validators=[MinValueValidator(1)]  # Garantiza que sea mayor o igual a 1
@@ -50,6 +50,9 @@ class List(models.Model):
             self.order = filtered_objects.aggregate(Max('order'))['order__max'] + 2 ** 16 - 1
         super().save(*args, **kwargs)
 
+    def delete_list(self):
+        self.delete()  # Eliminar físicamente la lista
+
 
 class Label(models.Model):
     board = models.ForeignKey(Board, on_delete=models.CASCADE, related_name='labels')
@@ -60,51 +63,6 @@ class Label(models.Model):
         return self.title
 
 
-# class Item(models.Model):
-#     list = models.ForeignKey(List, on_delete=models.CASCADE, related_name='items')
-#     title = models.CharField(max_length=255, blank=False, null=True)
-#     description = models.TextField(blank=True, null=False)
-#     image = models.ImageField(blank=True, upload_to='item_images')
-#     image_url = models.URLField(blank=True, null=False)
-#     color = models.CharField(blank=True, null=False, max_length=6)  # Hex Code
-#     order = models.DecimalField(max_digits=30, decimal_places=15, blank=True, null=True)
-#     labels = models.ManyToManyField(Label, blank=True)
-#     #assigned_to = models.ForeignKey(
-#      #   settings.AUTH_USER_MODEL,
-#       #  on_delete=models.SET_NULL,
-#        # null=True,
-#         #blank=True,
-#         #related_name="assigned_items"
-#     #)
-#     assigned_to = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL)
-#     #assigned_to = models.ManyToManyField(settings.AUTH_USER_MODEL, blank=True)
-#     due_date = models.DateTimeField(blank=True, null=True)
-#     created_at = models.DateTimeField(default=timezone.now)
-#     def clean(self):
-#         # Asegúrate de que el usuario asignado pertenece al proyecto relacionado
-#         # Validar que el usuario asignado pertenezca al proyecto relacionado
-#         if self.assigned_to:
-#             board = self.list.board
-#             if board.owner_model.model == "project":
-#                 project = board.owner
-#                 if not project.members.filter(id=self.assigned_to.id).exists():
-#                     raise ValidationError(f"El usuario {self.assigned_to} no pertenece al proyecto {project}.")
-       
-
-#     def __str__(self):
-#         return self.title
-
-#     def save(self, *args, **kwargs):
-#         # Verificar el límite de WIP antes de guardar el ítem
-#         self.clean()
-#         if self.list.items.count() >= self.list.max_wip:
-#             raise ValueError(f"Cannot add more items. WIP limit of {self.list.max_wip} reached.")
-#         filtered_objects = Item.objects.filter(list=self.list)
-#         if not self.order and filtered_objects.count() == 0:
-#             self.order = 2 ** 16 - 1 
-#         elif not self.order:
-#             self.order = filtered_objects.aggregate(Max('order'))['order__max'] + 2 ** 16 - 1
-#         super().save(*args, **kwargs)
 
 class Item(models.Model):
     title = models.CharField(max_length=255, blank=True, null=True)  # Permitir valores nulos y en blanco
@@ -116,6 +74,7 @@ class Item(models.Model):
         on_delete=models.SET_NULL,
         related_name="assigned_items"
     )  # Opcional
+    board = models.ForeignKey(Board, on_delete=models.CASCADE)
     list = models.ForeignKey(List, on_delete=models.CASCADE,  related_name='items')  # Obligatorio
     order = models.DecimalField(max_digits=30, decimal_places=15, blank=True, null=True)  # Opcional
     color = models.CharField(max_length=6, blank=True, null=True)  # Opcional
@@ -123,6 +82,7 @@ class Item(models.Model):
     image_url = models.URLField(blank=True, null=True)  # Opcional
     due_date = models.DateTimeField(blank=True, null=True)  # Opcional
     created_at = models.DateTimeField(auto_now_add=True)
+    labels = models.ManyToManyField(Label, blank=True)
     def save(self, *args, **kwargs):
         # Orden inicial si no se especifica
         if not self.order:
@@ -131,8 +91,17 @@ class Item(models.Model):
             self.order = max_order + 1
         super().save(*args, **kwargs)
 
+    def is_overdue(self):
+        """Retorna True si el `due_date` ha pasado."""
+        if self.due_date and timezone.now() > self.due_date:
+            return True
+        return False
+
     def __str__(self):
-        return self.title or "Sin título"
+        status = "Overdue" if self.is_overdue() else "On Time"
+        return f"{self.title or 'Sin título'} ({status})"
+
+    
 
 class Comment(models.Model):
     author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='comments')
@@ -184,29 +153,10 @@ class RecentlyViewedBoard(models.Model):
         return f'{self.user.username} viewed {self.board.title}'
 
 
-class Card(models.Model):
-    title = models.CharField(max_length=255)
-    description = models.TextField(blank=True)
-    due_date = models.DateField(null=True, blank=True)
-    assigned_user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)
-    label = models.CharField(max_length=100, blank=True)
-    state = models.ForeignKey(List, on_delete=models.CASCADE)
-    board = models.ForeignKey(Board, on_delete=models.CASCADE)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-    
-    def is_overdue(self):
-        if self.due_date and timezone.now().date() > self.due_date:
-            return True
-        return False
-
-    def __str__(self):
-        return self.title
-
 
 class ChecklistTask(models.Model):
     description = models.TextField()  
-    card = models.ForeignKey(Card, on_delete=models.CASCADE, related_name="checklist_tasks")
+   # card = models.ForeignKey(Card, on_delete=models.CASCADE, related_name="checklist_tasks")
     task = models.CharField(max_length=255)
     due_date = models.DateTimeField(null=True, blank=True)  # Fecha de vencimiento
     completed = models.BooleanField(default=False)

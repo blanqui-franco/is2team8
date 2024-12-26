@@ -13,7 +13,7 @@ from rest_framework.exceptions import PermissionDenied
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from users.models import User
-from .models import Attachment, Board, Comment, Item, Label, List, Notification,ChecklistTask
+from .models import Attachment, Board,Comment, Item, Label, List, Notification,ChecklistTask
 from .permissions import CanViewBoard, IsAuthorOrReadOnly
 from .serializers import (AttachmentSerializer, BoardSerializer,
                           CommentSerializer, ItemSerializer, LabelSerializer,
@@ -22,9 +22,8 @@ from .serializers import (AttachmentSerializer, BoardSerializer,
 from boards.models import RecentlyViewedBoard
 from django.http import Http404
 from django.db.models import Count
-
-
-
+#from rest_framework.permissions import IsAuthenticated
+#from django.utils import timezone
 
 #r = redis.Redis(
 #   host=settings.REDIS_HOST, port=settings.REDIS_PORT, db=settings.REDIS_DB,
@@ -202,15 +201,15 @@ class ListDetail(generics.RetrieveUpdateDestroyAPIView):
         self.check_object_permissions(self.request, list_obj.board)
         return list_obj
 
-    def delete(self, request, *args, **kwargs):
-        list_obj = self.get_object()
+    
+    def delete_list(request, pk):
+        try:
+            list_item = List.objects.get(pk=pk)
+            list_item.delete_list()  # Llamar al método delete_list
+            return Response({"message": "List deleted."}, status=status.HTTP_200_OK)
+        except List.DoesNotExist:
+            return Response({"error": "List not found."}, status=status.HTTP_404_NOT_FOUND)
 
-        # Realizar cualquier verificación adicional si es necesario
-        # Como revisar que no tenga tarjetas activas o cualquier otra condición de negocio
-
-        # Eliminar la lista
-        list_obj.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class ItemList(generics.ListCreateAPIView):
@@ -507,27 +506,65 @@ class ChecklistTaskDetail(generics.RetrieveUpdateDestroyAPIView):
         task = get_object_or_404(ChecklistTask, pk=self.kwargs.get('pk'))
         return task
 
-class BoardStatsView(APIView):
-    def get(self, request, board_id):
-        board = get_object_or_404(Board, id=board_id)
-        tasks = Item.objects.filter(board=board)
+#class BoardStatsView(APIView):
+#    def get(self, request, board_id):
+#        board = get_object_or_404(Board, id=board_id)
+#        tasks = Item.objects.filter(board=board)
 
         # Distribución de tareas por estado
-        tasks_by_status = tasks.values('status').annotate(count=Count('status'))
+#        tasks_by_status = tasks.values('status').annotate(count=Count('status'))
 
         # Tareas atrasadas
-        now = timezone.now()
-        overdue_count = tasks.filter(due_date__lt=now, completed=False).count()
-        on_time_count = tasks.filter(due_date__gte=now).count()
+#        now = timezone.now()
+#        overdue_count = tasks.filter(due_date__lt=now, completed=False).count()
+ #       on_time_count = tasks.filter(due_date__gte=now).count()
 
         # Tareas por usuario asignado
-        tasks_by_user = tasks.values('assigned_to__username').annotate(count=Count('assigned_to'))
+#        tasks_by_user = tasks.values('assigned_to__username').annotate(count=Count('assigned_to'))
 
-        return Response({
-            "tasks_by_status": {t['status']: t['count'] for t in tasks_by_status},
-            "tasks_overdue": {
-                "overdue": overdue_count,
-                "on_time": on_time_count
-            },
-            "tasks_by_user": {t['assigned_to__username']: t['count'] for t in tasks_by_user}
-        })
+#        return Response({
+#            "tasks_by_status": {t['status']: t['count'] for t in tasks_by_status},
+#            "tasks_overdue": {
+#                "overdue": overdue_count,
+#                "on_time": on_time_count
+#            },
+#            "tasks_by_user": {t['assigned_to__username']: t['count'] for t in tasks_by_user}
+#        })
+
+
+
+
+
+
+class BoardStatsView(APIView):
+    
+
+    permission_classes = [permissions.AllowAny]
+    def get(self, request, board_id):
+        try:
+           
+           # cards = Item.objects.filter(board_id=board_id, list__status="active")
+
+            cards = Item.objects.filter(board_id=board_id, list__board_id=board_id)
+
+
+            # Total de tareas
+            total_tasks = cards.count()
+            
+            # Tareas vencidas
+            overdue_tasks = cards.filter(due_date__lt=timezone.now().date()).count()
+            
+            # Tareas agrupadas por usuario
+            tasks_by_user = cards.values('assigned_to__username').annotate(count=Count('id'))
+
+            # Tareas agrupadas por estado (listas)
+            tasks_by_list = cards.values('list__title').annotate(count=Count('id')).order_by('list__title')
+
+            return Response({
+                'tasks': total_tasks,
+                'overdue_tasks': overdue_tasks,
+                'tasks_by_user': list(tasks_by_user),
+                'tasks_by_list': list(tasks_by_list),
+            }, status=status.HTTP_200_OK)
+        except Board.DoesNotExist:
+            return Response({'error': 'Board not found'}, status=status.HTTP_404_NOT_FOUND)

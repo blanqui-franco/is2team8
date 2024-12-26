@@ -86,6 +86,7 @@ const EditCardModal = ({ card, list, setShowModal , itemId}) => {
                 {
                     assigned_to: member.id,
                     title: card.title || "Sin título", // Campo requerido
+                    board:board.id,
                     list: list.id,     // Campo requerido
                 }
             );

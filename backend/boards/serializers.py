@@ -8,14 +8,14 @@ from rest_framework import serializers
 from rest_framework.fields import Field
 from users.models import User
 from users.serializers import UserSerializer
-from .models import Attachment, Board, Comment, Item, Label, List, Notification, ChecklistTask, Card
+from .models import Attachment, Board, Comment, Item, Label, List, Notification, ChecklistTask
 from django.utils import timezone
 
 class LabelSerializer(serializers.ModelSerializer):
     class Meta:
         model = Label
-        fields = ['id', 'name', 'board']  # Incluye los campos necesarios aquí.
-
+       # fields = ['id', 'name', 'board']  # Incluye los campos necesarios aquí.
+        fields = [ 'board']  
 
 class CommentSerializer(serializers.ModelSerializer):
     author = UserSerializer(read_only=True)
@@ -139,13 +139,13 @@ class BoardSerializer(ShortBoardSerializer):
         return ListSerializer(queryset, many=True).data
 
 
-class CardSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Card
-        fields = ['id', 'title', 'description', 'due_date', 'assigned_user', 'label', 'state', 'board', 'created_at', 'updated_at']
+#class CardSerializer(serializers.ModelSerializer):
+#    class Meta:
+#        model = Card
+#        fields = ['id', 'title', 'description', 'due_date', 'assigned_user', 'label', 'state', 'board', 'created_at', 'updated_at']
 
-    def get_is_overdue(self, obj):
-        return obj.is_overdue()
+#    def get_is_overdue(self, obj):
+#       return obj.is_overdue()
 
 
 class NotificationSerializer(serializers.ModelSerializer):

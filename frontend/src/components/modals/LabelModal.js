@@ -17,7 +17,7 @@ const getLiContent = (data, selected) => {
         return {
             ...label,
             style: {
-                backgroundColor: `#${label.color}`,
+                backgroundColor: `${label.color}`,
             },
             checked,
         };
@@ -112,6 +112,28 @@ const CreateLabel = ({ labelElem, setShowCreateLabel, label, replaceItem }) => {
     const [title, setTitle] = useState(label?.title || ""); // Manejo de estado inicial
     const [color, setColor] = useState(label?.color || ""); // Manejo de estado inicial
 
+    const handleSave = async () => {
+        if (!label?.id) {
+            alert("El ID del label es inválido.");
+            return;
+        }
+
+        try {
+            const { data } = await authAxios.put(
+                `${backendUrl}/boards/labels/${label.id}/`,
+                {
+                    title,
+                    color,
+                }
+            );
+            replaceItem(data); // Actualiza el item con la nueva data
+            setShowCreateLabel(false); // Cierra el modal después de guardar
+        } catch (error) {
+            console.error("Error al guardar el label:", error);
+            alert("Hubo un error al actualizar el label.");
+        }
+    };
+
     return (
         <div
             style={getEditControlsSidePosition(labelElem.current)}
@@ -169,17 +191,7 @@ const CreateLabel = ({ labelElem, setShowCreateLabel, label, replaceItem }) => {
                 </ul>
             </div>
             <button
-                onClick={async () => {
-                    const { data } = await authAxios.put(
-                        `${backendUrl}/boards/labels/${label.id}/`,
-                        {
-                            title,
-                            color,
-                        }
-                    );
-                    replaceItem(data);
-                    setShowCreateLabel(false);
-                }}
+                onClick={handleSave}
                 className="btn label-modal__create-button"
             >
                 Save
@@ -187,5 +199,6 @@ const CreateLabel = ({ labelElem, setShowCreateLabel, label, replaceItem }) => {
         </div>
     );
 };
+
 
 export default LabelModal;
