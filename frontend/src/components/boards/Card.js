@@ -48,12 +48,7 @@ const Card = ({ card, list, provided, isDragging }) => {
     };
 
     // Formatear la fecha de vencimiento
-    //const formatDate = (isoDate) => {
-    //    if (!isoDate) return "Sin definir";
-    //    const [year, month, day] = isoDate.split("T")[0].split("-");
-    //    return `${day}/${month}/${year}`;
-    //};
-
+    
     const handleCardClick = (e) => {
         if (isEditing) return;
         if (e.target.className.includes("pen")) return;

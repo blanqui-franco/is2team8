@@ -26,7 +26,7 @@ const EditCardModal = ({ card, list, setShowModal , itemId}) => {
     const [newTaskDescription, setNewTaskDescription] = useState("");
     const [newTaskDueDate, setNewTaskDueDate] = useState("");
     const [showTaskForm, setShowTaskForm] = useState(false);
-
+    
 
     const [assignedMember, setAssignedMember] = useState( card.assigned_to ? [card.assigned_to] : []);
     const [isAssigning, setIsAssigning] = useState(false);
@@ -150,6 +150,7 @@ const EditCardModal = ({ card, list, setShowModal , itemId}) => {
     
 
     const saveDueDate = async () => {
+       
         if (!dueDate) {
             console.error("La fecha de vencimiento no puede ser nula");
             return;
@@ -384,17 +385,7 @@ const EditCardModal = ({ card, list, setShowModal , itemId}) => {
                     </div>
 
                     <ul className="edit-modal__actions">
-                            <li>
-                                <a className="btn btn--secondary btn--small">
-                                    <i className="fal fa-tags"></i> Edit Labels
-                                </a>
-                            </li>
-                            {/* Selección de miembros cuando se esté asignando */}
-                            <li>
-                                <a className="btn btn--secondary btn--small">
-                                    <i className="fal fa-arrow-right"></i> Move
-                                </a>
-                            </li>
+                        
                             <li style={{ position: "relative" }}>
                             <button
                                 className="btn btn--secondary btn--small"

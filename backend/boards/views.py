@@ -190,6 +190,25 @@ class ListShow(generics.ListCreateAPIView):
         serializer.save(board=board)
 
 
+class ListView(APIView):
+    def get(self, request, board_id):
+        # Filtros opcionales
+        status_filter = request.GET.get('status', None)  # Filtro por estado de las tarjetas (opcional)
+        due_date_filter = request.GET.get('due_date', None)  # Filtro por fecha de vencimiento (opcional)
+
+        # Filtrar listas del tablero
+        lists = List.objects.filter(board_id=board_id)
+        # Si se proporciona un filtro por fecha de vencimiento, aplicar
+        if due_date_filter:
+            lists = lists.filter(card_set__due_date__lte=due_date_filter)
+
+        lists = lists.prefetch_related('card_set')  # Relación de las tarjetas
+
+        serializer = ListSerializer(lists, many=True)
+        return Response(serializer.data)
+
+
+
 class ListDetail(generics.RetrieveUpdateDestroyAPIView):
 
     serializer_class = ListSerializer

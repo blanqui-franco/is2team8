@@ -2568,11 +2568,10 @@ button, input, select, textarea, input::placeholder {
 }
 
 .board__filter-btn {
-  background: none;
-  border: none;
-  cursor: pointer;
-  margin-left: 10px;
-  font-size: 1.2rem;
+  position: absolute; /* Asegura que el botón pueda posicionarse libremente */
+  top: 70px; /* Ajusta la distancia desde la parte superior */
+  right: 10px; /* Ajusta la distancia desde el lado derecho */
+  z-index: 1; /* Asegura que esté por encima de otros elementos */
 }
 
 .board__filter-menu {

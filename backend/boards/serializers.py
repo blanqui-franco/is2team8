@@ -73,6 +73,7 @@ class ItemSerializer(serializers.ModelSerializer):
 
 class ListSerializer(serializers.ModelSerializer):
     items = serializers.SerializerMethodField()
+    items = ItemSerializer(many=True, read_only=True)
     max_wip = serializers.IntegerField(required=True)  
     class Meta:
         model = List
@@ -80,8 +81,8 @@ class ListSerializer(serializers.ModelSerializer):
 
     def get_items(self, obj):
         queryset = Item.objects.filter(list=obj).order_by('order')
+        print(f"Items para la lista {obj.id}: {queryset}")  # Depuración
         return ItemSerializer(queryset, many=True).data
-
 
 class ShortBoardSerializer(serializers.ModelSerializer):
     owner = serializers.SerializerMethodField()
