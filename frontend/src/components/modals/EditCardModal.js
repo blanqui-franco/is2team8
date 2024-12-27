@@ -148,9 +148,7 @@ const EditCardModal = ({ card, list, setShowModal , itemId}) => {
     } = useAxiosGet(`/boards/comments/?item=${card.id}`);
 
     
-
     const saveDueDate = async () => {
-       
         if (!dueDate) {
             console.error("La fecha de vencimiento no puede ser nula");
             return;
@@ -158,22 +156,37 @@ const EditCardModal = ({ card, list, setShowModal , itemId}) => {
     
         try {
             const formattedDate = new Date(dueDate).toISOString();
+            console.log("Fecha a enviar al backend:", formattedDate);
+    
+            const payload = {
+                title: card.title, // Campo requerido
+                list: list.id,     // Campo requerido
+                due_date: formattedDate, 
+                board: board.id,
+            };
+    
+            console.log("Payload enviado:", payload);
+    
             const response = await authAxios.put(
                 `${backendUrl}/boards/items/${card.id}/`,
-                {
-                    title: card.title,  // Campo requerido
-                    list: list.id,      // Campo requerido
-                    due_date: formattedDate, // Asegúrate de usar el nombre correcto en el backend
-                }
+                payload
             );
+    
             setDueDate(response.data.due_date); // Actualiza el estado local
             updateCard(board, setBoard)(list.id, response.data);
             console.log("Fecha de vencimiento guardada con éxito:", response.data);
         } catch (error) {
-            console.error("Error al guardar la fecha límite:", error);
+            if (error.response) {
+                console.error(
+                    "Error en la respuesta del servidor:",
+                    error.response.data
+                );
+            } else {
+                console.error("Error en la solicitud:", error.message);
+            }
         }
     };
-
+    
     
 
     const saveTasks = async (updatedTasks) => {
@@ -199,7 +212,8 @@ const EditCardModal = ({ card, list, setShowModal , itemId}) => {
             description: newTaskDescription.trim(),
             completed: false,
             due_date: newTaskDueDate || null, // Permite `null` si no hay fecha
-            card: card.id                    // Asocia la tarea a la tarjeta
+            card: card.id ,
+            board: board.id                   
         };
     
         const updatedTasks = [...tasks, newTask];
@@ -521,6 +535,7 @@ const EditCardDescription = ({ list, card, setEditingDescription }) => {
     const { board, setBoard } = useContext(globalContext);
     const [description, setDescription] = useState(card.description);
     const [isSaving, setIsSaving] = useState(false); // Estado de carga
+    const [isModalOpen, setIsModalOpen] = useState(true); // Estado para controlar la visibilidad del modal
 
     const onEditDesc = async (e) => {
         e.preventDefault();
@@ -528,9 +543,10 @@ const EditCardDescription = ({ list, card, setEditingDescription }) => {
     
         try {
             const payload = {
-                title: card.title || "Sin título",  // Valor predeterminado
-                description: description || "",    // Cadena vacía si no hay descripción
-                list: list.id                      // Relación obligatoria
+                title: card.title || "Sin título",  // Valor predeterminado si no hay título
+                description: description || "",     // Descripción vacía si no hay descripción
+                list: list.id,                      // Asegúrate de que 'list.id' sea un número válido
+                board: board.id                      // Asegúrate de enviar el 'board.id' si el backend lo requiere
             };
     
             console.log("Enviando payload:", payload);
@@ -541,7 +557,10 @@ const EditCardDescription = ({ list, card, setEditingDescription }) => {
             );
     
             updateCard(board, setBoard)(list.id, data);
-            setEditingDescription(false);
+
+            // No cerrar el modal automáticamente
+            setIsModalOpen(true);  // Deja el modal abierto
+
         } catch (error) {
             console.error("Error al actualizar descripción:", error.response || error);
             alert("Error al guardar la descripción. Verifica los datos.");
@@ -551,29 +570,32 @@ const EditCardDescription = ({ list, card, setEditingDescription }) => {
 
     const onCancelEdit = () => {
         setEditingDescription(false);
+        setIsModalOpen(false); // Cierra el modal al cancelar
     };
 
     return (
-        <form onSubmit={onEditDesc} className="edit-modal__form">
-            <textarea
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                disabled={isSaving} // Deshabilitar mientras guarda
-            />
-            <div className="edit-modal__form-actions">
-                <button className="btn btn--small" type="submit" disabled={isSaving}>
-                    {isSaving ? "Guardando..." : "Guardar"}
-                </button>
-                <button
-                    className="btn btn--secondary btn--small"
-                    type="button"
-                    onClick={onCancelEdit}
-                    disabled={isSaving}
-                >
-                    Cancelar
-                </button>
-            </div>
-        </form>
+        isModalOpen && ( // Solo renderizar el modal si está abierto
+            <form onSubmit={onEditDesc} className="edit-modal__form">
+                <textarea
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    disabled={isSaving} // Deshabilitar mientras guarda
+                />
+                <div className="edit-modal__form-actions">
+                    <button className="btn btn--small" type="submit" disabled={isSaving}>
+                        {isSaving ? "Guardando..." : "Guardar"}
+                    </button>
+                    <button
+                        className="btn btn--secondary btn--small"
+                        type="button"
+                        onClick={onCancelEdit}
+                        disabled={isSaving}
+                    >
+                        Cancelar
+                    </button>
+                </div>
+            </form>
+        )
     );
 };
 

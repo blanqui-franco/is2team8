@@ -82,7 +82,7 @@ class Item(models.Model):
     image_url = models.URLField(blank=True, null=True)  # Opcional
     due_date = models.DateTimeField(blank=True, null=True)  # Opcional
     created_at = models.DateTimeField(auto_now_add=True)
-    labels = models.ManyToManyField(Label, blank=True)
+    labels = models.ManyToManyField(Label, related_name='items', blank=True)
     def save(self, *args, **kwargs):
         # Orden inicial si no se especifica
         if not self.order:

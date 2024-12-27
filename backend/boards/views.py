@@ -308,6 +308,18 @@ class ItemDetail(generics.RetrieveUpdateDestroyAPIView):
         if board == label.board:
             return label
         return None
+    
+    def perform_update(self, serializer):
+        # Guardamos el ítem primero
+        item = serializer.save()
+
+        # Asignamos las etiquetas
+        if 'labels' in self.request.data:
+            labels_ids = self.request.data['labels']
+            labels = Label.objects.filter(id__in=labels_ids)
+            item.labels.set(labels)  # Establece las etiquetas relacionadas con el ítem
+
+        item.save()
 
     def get_list(self, pk, board):
         list = get_object_or_404(List, pk=pk)
@@ -473,6 +485,8 @@ class LabelDetail(generics.RetrieveUpdateDestroyAPIView):
         label = get_object_or_404(Label, pk=pk)
         self.check_object_permissions(self.request, label.board)
         return label
+    
+    
 
 
 
@@ -571,8 +585,9 @@ class BoardStatsView(APIView):
             total_tasks = cards.count()
             
             # Tareas vencidas
-            overdue_tasks = cards.filter(due_date__lt=timezone.now().date()).count()
-            
+           
+            overdue_tasks = cards.filter(due_date__lt=timezone.now()).count()
+
             # Tareas agrupadas por usuario
             tasks_by_user = cards.values('assigned_to__username').annotate(count=Count('id'))
 

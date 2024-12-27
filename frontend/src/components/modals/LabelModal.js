@@ -11,13 +11,14 @@ const zipWith3 = (xs, ys, zs, f) => xs.map((n, i) => f(n, ys[i], zs[i]));
 
 const getLiContent = (data, selected) => {
     if (!data) return [];
+    if (!Array.isArray(selected)) selected = [];
 
     return data.map((label) => {
         const checked = selected.find((selectedLabel) => selectedLabel.id === label.id) !== undefined;
         return {
             ...label,
             style: {
-                backgroundColor: `${label.color}`,
+                backgroundColor: `#${label.color}`,
             },
             checked,
         };
@@ -31,22 +32,45 @@ const LabelModal = ({ list, card, cardElem, setShowModal }) => {
     const [label, setLabel] = useState(null);
     const { data, replaceItem } = useAxiosGet(`/boards/labels/?board=${board.id}`);
     console.log("Labels data:", data);
-    const liContent = getLiContent(data, card.labels);
+    const liContent = getLiContent(data, card.labels || []); 
+    
+
 
     const toggleLabel = async (labelId) => {
-        const updatedLabels = card.labels.some((label) => label.id === labelId)
-            ? card.labels.filter((label) => label.id !== labelId) // Eliminar
-            : [...card.labels, { id: labelId }]; // Añadir
-
-        const { data } = await authAxios.put(
-            `${backendUrl}/boards/items/${card.id}/`,
-            {
-                title: card.title,
-                labels: updatedLabels,
+        const currentLabels = Array.isArray(card.labels) ? card.labels : [];
+        const updatedLabels = currentLabels.some((label) => label.id === labelId)
+        //const labelsToSend = updatedLabels.map((label) => label.id);
+            ? currentLabels.filter((label) => label.id !== labelId) // Eliminar etiqueta
+            : [...currentLabels, { id: labelId }]; // Añadir etiqueta
+    
+        // Extrae solo los IDs para enviar a la API
+        const labelsToSend = updatedLabels.map((label) => label.id);
+    
+        try {
+            // Envía los datos al backend
+            const response = await authAxios.put(
+                `${backendUrl}/boards/items/${card.id}/`,
+                {
+                    title: card.title || "Sin título", // Campo obligatorio
+                    label: labelsToSend, // Debe coincidir con el nombre del campo en el backend (label, no labels)
+                    list: list.id, // Agrega el ID de la lista asociada
+                    board: board.id, 
+                }
+            );
+    
+            // Log de éxito
+            console.log("Etiquetas actualizadas exitosamente:", response.data);
+    
+            // Actualiza el estado local con la respuesta del backend
+            updateCard(board, setBoard)(list.id, response.data);
+        } catch (error) {
+            console.error("Error al actualizar etiquetas:", error);
+            if (error.response?.data) {
+                console.error("Detalles del error del backend:", error.response.data);
             }
-        );
-        updateCard(board, setBoard)(list.id, data);
+        }
     };
+    
 
     return (
         <>

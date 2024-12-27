@@ -11,16 +11,7 @@ const HomeSidebar = ({ setShowTeamModal, projects }) => {
                         <i className="fab fa-trello"></i> Boards
                     </a>
                 </li>
-                <li>
-                    <a className="btn btn--transparent btn--small">
-                        <i className="fal fa-ruler-triangle"></i> Templates
-                    </a>
-                </li>
-                <li>
-                    <a className="btn btn--transparent btn--small">
-                        <i className="fal fa-newspaper"></i> Feed
-                    </a>
-                </li>
+                
             </ul>
 
             <div className="home-menu__section">

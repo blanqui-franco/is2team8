@@ -213,19 +213,28 @@ const AddCard = ({ onAddCard, cardTitle, setCardTitle }) => (
 const EditList = ({ list, setEditingTitle }) => {
     const { board, setBoard } = useContext(globalContext);
     const [listTitle, setListTitle] = useState(list.title);
-
     const onEditList = async (e) => {
         e.preventDefault();
         if (listTitle.trim() === "") return;
-        const { data } = await authAxios.put(
-            `${backendUrl}/boards/lists/${list.id}/`,
-            {
-                title: listTitle,
-            }
-        );
-        updateList(board, setBoard)(data);
-        setEditingTitle(false);
+    
+        const updatedListData = {
+            title: listTitle,
+            max_wip: list.max_wip || [], // Asegúrate de enviar max_wip si es necesario
+        };
+    
+        try {
+            const { data } = await authAxios.put(
+                `${backendUrl}/boards/lists/${list.id}/`,
+                updatedListData
+            );
+            updateList(board, setBoard)(data);
+            setEditingTitle(false);
+        } catch (error) {
+            console.error("Error al actualizar la lista:", error.response?.data || error.message);
+            alert("Error al actualizar la lista: " + (error.response?.data || error.message));
+        }
     };
+    
 
     return (
         <form onSubmit={onEditList}>

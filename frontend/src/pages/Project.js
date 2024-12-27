@@ -74,8 +74,8 @@ const Project = (props) => {
                                         className="btn btn--secondary btn--medium"
                                         onClick={() => setIsEditing(true)}
                                     >
-                                        <i className="fal fa-pen"></i> Edit Team
-                                        Profile
+                                        <i className="fal fa-pen"></i> Editar
+                                        
                                     </button>
                                 )}
                             </div>
@@ -102,22 +102,9 @@ const Project = (props) => {
                             }`}
                             onClick={() => setCurTab(2)}
                         >
-                            Members
+                            Miembros
                         </li>
-                        <li
-                            className={`team__tab${
-                                curTab == 3 ? " team__tab--active" : ""
-                            }`}
-                        >
-                            Settings
-                        </li>
-                        <li
-                            className={`team__tab${
-                                curTab == 4 ? " team__tab--active" : ""
-                            }`}
-                        >
-                            Business Class
-                        </li>
+                        
                     </ul>
                 </div>
             </div>

@@ -15,7 +15,8 @@ class LabelSerializer(serializers.ModelSerializer):
     class Meta:
         model = Label
        # fields = ['id', 'name', 'board']  # Incluye los campos necesarios aquí.
-        fields = [ 'board']  
+       # fields = [ 'board'] 
+        fields = ['id', 'title', 'color', 'board'] 
 
 class CommentSerializer(serializers.ModelSerializer):
     author = UserSerializer(read_only=True)

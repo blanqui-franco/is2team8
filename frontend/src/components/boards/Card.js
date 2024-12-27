@@ -233,15 +233,7 @@ const EditControls = ({
                         <i className="fal fa-tags"></i> Edit Labels
                     </button>
                 </li>
-                <li>
-                    <i className="fal fa-user"></i> Asignar Usuario
-                </li>
-                <li>
-                    <i className="fal fa-arrow-right"></i> Move
-                </li>
-                <li>
-                    <i className="fal fa-clock"></i> Change Due Date
-                </li>
+                
             </ul>
         </div>
     );
